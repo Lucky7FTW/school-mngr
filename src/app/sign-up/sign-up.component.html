@@ -1,6 +1,6 @@
 <div class="w3-container" style="max-width: 400px; margin: auto;">
-    <h2>Login</h2>
-    <form (ngSubmit)="onLogin()">
+    <h2>Sign Up</h2>
+    <form (ngSubmit)="onSignUp()">
       <p>
         <label>Email</label>
         <input
@@ -22,11 +22,24 @@
         />
       </p>
       <p>
+        <label>Role</label>
+        <select
+          class="w3-select"
+          [(ngModel)]="role"
+          name="role"
+          required
+        >
+          <option value="admin">Admin</option>
+          <option value="professor">Professor</option>
+          <option value="student" selected>Student</option>
+        </select>
+      </p>
+      <p>
         <button
           class="w3-button w3-black"
           type="submit"
         >
-          Login
+          Sign Up
         </button>
       </p>
     </form>

@@ -1,29 +1,52 @@
-// login.component.ts
-import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { AuthService } from '../services/auth.service';
 import { Router, RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
+  templateUrl: './login.component.html',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  email: string = '';
-  password: string = '';
+  email = '';
+  password = '';
 
-  constructor(private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
-  onLogin(): void {
-    console.log('Login attempted with:', this.email, this.password);
-    // Navigate to home page after login
-    this.router.navigate(['/home']);
-  }
-
-  goHome(): void {
-    this.router.navigate(['/home']);
+  onLogin() {
+    this.authService.login(this.email, this.password).subscribe({
+      next: (userCredential) => {
+        console.log('Login success:', userCredential);
+        // Once logged in, you can fetch role if needed:
+        const uid = userCredential.user.uid;
+        this.authService.getUserRole(uid).subscribe({
+          next: (role) => {
+            console.log('User role is:', role);
+            // Navigate based on role
+            switch (role) {
+              case 'admin':
+                this.router.navigate(['/admin-dashboard']);
+                break;
+              case 'professor':
+                this.router.navigate(['/professor-dashboard']);
+                break;
+              default:
+                // default is student or unrecognized
+                this.router.navigate(['/student-dashboard']);
+                break;
+            }
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Login error:', error);
+      }
+    });
   }
 }
