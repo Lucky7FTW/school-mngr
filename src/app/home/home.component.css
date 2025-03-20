@@ -1,0 +1,17 @@
+/* home.component.css */
+
+/* Use the Amatic SC font from the link in index.html */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: "Amatic SC", cursive;
+  }
+  
+  /* Full-screen background image */
+  .bgimg {
+    background: url("../assets/school.jpg") no-repeat center center;
+    background-size: cover;
+    height: 100vh; /* fills the viewport height */
+  }
+  

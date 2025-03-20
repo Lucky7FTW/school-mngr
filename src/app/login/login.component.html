@@ -1,0 +1,40 @@
+<!-- login.component.html -->
+<div class="bgimg w3-display-container">
+    <!-- Navbar with Home Button -->
+    <div class="w3-display-topright" style="padding: 20px;">
+      <button class="w3-button w3-black" (click)="goHome()">
+        Home
+      </button>
+    </div>
+  
+    <!-- Login Form Container -->
+    <div class="w3-display-middle w3-center" style="width:300px;">
+      <h1>Login</h1>
+      <form (ngSubmit)="onLogin()">
+        <p>
+          <input 
+            class="w3-input" 
+            type="email" 
+            placeholder="Email" 
+            [(ngModel)]="email" 
+            name="email" 
+            required />
+        </p>
+        <p>
+          <input 
+            class="w3-input" 
+            type="password" 
+            placeholder="Password" 
+            [(ngModel)]="password" 
+            name="password" 
+            required />
+        </p>
+        <p>
+          <button class="w3-button w3-black w3-large" type="submit">
+            Login
+          </button>
+        </p>
+      </form>
+    </div>
+  </div>
+  
