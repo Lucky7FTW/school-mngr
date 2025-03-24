@@ -1,8 +1,17 @@
+// src/app/login/login.component.ts
+
 import { Component } from '@angular/core';
-import { AuthService } from '../services/auth.service';
-import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import { AppState } from '../store';
+import { loginStart } from '../store/auth.actions';
+import {
+  selectAuthLoading,
+  selectAuthError,
+} from '../store/auth.selectors';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -14,39 +23,19 @@ export class LoginComponent {
   email = '';
   password = '';
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  loading$!: Observable<boolean>;
+  error$!: Observable<any>;
+
+  constructor(private store: Store<AppState>, private router: Router) {}
+
+  ngOnInit(): void {
+    // Listen to auth state if needed
+    this.loading$ = this.store.select(selectAuthLoading);
+    this.error$ = this.store.select(selectAuthError);
+  }
 
   onLogin() {
-    this.authService.login(this.email, this.password).subscribe({
-      next: (userCredential) => {
-        console.log('Login success:', userCredential);
-        // Once logged in, you can fetch role if needed:
-        const uid = userCredential.user.uid;
-        this.authService.getUserRole(uid).subscribe({
-          next: (role) => {
-            console.log('User role is:', role);
-            // Navigate based on role
-            switch (role) {
-              case 'admin':
-                this.router.navigate(['/admin-dashboard']);
-                break;
-              case 'professor':
-                this.router.navigate(['/professor-dashboard']);
-                break;
-              default:
-                // default is student or unrecognized
-                this.router.navigate(['/student-dashboard']);
-                break;
-            }
-          }
-        });
-      },
-      error: (error) => {
-        console.error('Login error:', error);
-      }
-    });
+    // Dispatch the loginStart action
+    this.store.dispatch(loginStart({ email: this.email, password: this.password }));
   }
 }
