@@ -14,11 +14,16 @@ import { AuthEffects } from './app/auth/store/auth.effects';
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes),
+    // Provide Firebase (initialize app)
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
+
+    // Provide NgRx Store + Effects
     provideStore({ auth: authReducer }),
-    provideEffects([AuthEffects])
+    provideEffects([AuthEffects]),
+
+    // Provide Router last
+    provideRouter(routes),
   ]
 }).catch(err => console.error(err));

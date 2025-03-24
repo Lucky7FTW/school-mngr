@@ -1,7 +1,17 @@
 // src/app/services/auth.service.ts
 import { Injectable } from '@angular/core';
-import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, UserCredential } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
+import {
+  Auth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  UserCredential
+} from '@angular/fire/auth';
+import {
+  Firestore,
+  doc,
+  setDoc,
+  getDoc
+} from '@angular/fire/firestore';
 import { Observable, from } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
@@ -13,7 +23,7 @@ export class AuthService {
 
   signUp(email: string, password: string, role: 'admin' | 'professor' | 'student'): Observable<UserCredential> {
     return from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
-      switchMap((userCredential: UserCredential) => {
+      switchMap(userCredential => {
         const uid = userCredential.user.uid;
         const userRef = doc(this.firestore, `users/${uid}`);
         return from(setDoc(userRef, {
@@ -27,7 +37,9 @@ export class AuthService {
     );
   }
 
+  // Return an Observable
   login(email: string, password: string): Observable<UserCredential> {
+    // signInWithEmailAndPassword returns a Promise → convert to Observable with `from`
     return from(signInWithEmailAndPassword(this.auth, email, password));
   }
 

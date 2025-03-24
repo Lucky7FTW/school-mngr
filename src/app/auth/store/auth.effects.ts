@@ -1,4 +1,4 @@
-// auth.effects.ts
+// src/app/auth/store/auth.effects.ts
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import * as AuthActions from './auth.actions';
@@ -10,44 +10,53 @@ export class AuthEffects {
   constructor(
     private actions$: Actions,
     private authService: AuthService
-  ) {}
+  ) {
+    // Debug logs (optional but helpful)
+    console.log('AuthEffects constructor: authService =', this.authService);
+    console.log('AuthEffects constructor: authService.login =', this.authService?.login);
+  }
 
-  // Effect for login
+  // =========== LOGIN ===========
   login$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.login),
-      mergeMap((action) =>
-        this.authService.login(action.email, action.password).pipe(
+      mergeMap(action => {
+        // Call our authService.login → returns Observable
+        const loginObservable = this.authService.login(action.email, action.password);
+        console.log('login effect: got loginObservable =', loginObservable);
+
+        return loginObservable.pipe(
           map(userCredential => AuthActions.loginSuccess({ userCredential })),
           catchError(error => of(AuthActions.loginFailure({ error })))
-        )
-      )
+        );
+      })
     )
   );
 
-  // Effect for sign-up
+  // =========== SIGN UP ===========
   signUp$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.signUp),
-      mergeMap((action) =>
-        this.authService.signUp(action.email, action.password, action.role).pipe(
+      mergeMap(action => {
+        const signUpObservable = this.authService.signUp(action.email, action.password, action.role);
+        return signUpObservable.pipe(
           map(userCredential => AuthActions.signUpSuccess({ userCredential })),
           catchError(error => of(AuthActions.signUpFailure({ error })))
-        )
-      )
+        );
+      })
     )
   );
 
-  // Effect for logout
+  // =========== LOGOUT ===========
   logout$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.logout),
-      mergeMap(() =>
-        this.authService.logout().pipe(
+      mergeMap(() => {
+        return this.authService.logout().pipe(
           map(() => AuthActions.logoutSuccess()),
           catchError(error => of(AuthActions.logoutFailure({ error })))
-        )
-      )
+        );
+      })
     )
   );
 }
