@@ -3,48 +3,31 @@
 import { createAction, props } from '@ngrx/store';
 import { UserCredential } from '@angular/fire/auth';
 
-/**
- * Login Start:
- * Dispatched when a user initiates the login process
- */
+/** Login Start */
 export const loginStart = createAction(
   '[Auth] Login Start',
   props<{ email: string; password: string }>()
 );
 
-/**
- * Login Success:
- * Dispatched when login is successful
- */
+/** Login Success */
 export const loginSuccess = createAction(
   '[Auth] Login Success',
   props<{
     userCredential: UserCredential;
-    // If your service can return null, use 'string | null'
-    // If it always returns a valid string, just use 'string'
     role: string | null;
   }>()
 );
 
-/**
- * Login Failure:
- * Dispatched if an error occurs during login
- */
+/** Login Failure */
 export const loginFailure = createAction(
   '[Auth] Login Failure',
   props<{ error: any }>()
 );
 
-/**
- * Logout:
- * Dispatched to clear user session
- */
+/** Logout */
 export const logout = createAction('[Auth] Logout');
 
-/**
- * Sign Up Start:
- * Dispatched when a user starts the sign-up process
- */
+/** Sign Up Start */
 export const signUpStart = createAction(
   '[Auth] Sign Up Start',
   props<{
@@ -54,19 +37,19 @@ export const signUpStart = createAction(
   }>()
 );
 
-/**
+/** 
  * Sign Up Success:
- * Dispatched when sign-up is successful
+ * We ADDED `role` here so we can store it immediately. 
  */
 export const signUpSuccess = createAction(
   '[Auth] Sign Up Success',
-  props<{ userCredential: UserCredential }>()
+  props<{
+    userCredential: UserCredential;
+    role: string | null; // or 'admin' | 'professor' | 'student' | null
+  }>()
 );
 
-/**
- * Sign Up Failure:
- * Dispatched if an error occurs during sign-up
- */
+/** Sign Up Failure */
 export const signUpFailure = createAction(
   '[Auth] Sign Up Failure',
   props<{ error: any }>()

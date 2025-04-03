@@ -48,21 +48,27 @@ export const authReducer = createReducer(
   on(AuthActions.signUpStart, (state) => ({
     ...state,
     loading: true,
-    error: null
+    error: null,
   })),
 
-  on(AuthActions.signUpSuccess, (state, { userCredential }) => ({
+  /** 
+   * We updated signUpSuccess to also accept 'role' from the action, 
+   * so we can store it in state immediately.
+   */
+  on(AuthActions.signUpSuccess, (state, { userCredential, role }) => ({
     ...state,
     userCredential,
+    role,
     loading: false,
-    error: null
+    error: null,
   })),
 
   on(AuthActions.signUpFailure, (state, { error }) => ({
     ...state,
     userCredential: null,
+    role: null,
     loading: false,
-    error
+    error,
   })),
 
   // ---- LOGOUT ----
@@ -71,6 +77,6 @@ export const authReducer = createReducer(
     userCredential: null,
     role: null,
     loading: false,
-    error: null
+    error: null,
   }))
 );

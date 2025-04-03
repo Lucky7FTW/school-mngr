@@ -1,7 +1,7 @@
 // src/app/services/auth.service.ts
 import { Injectable } from '@angular/core';
 import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, UserCredential } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, getDoc, serverTimestamp } from '@angular/fire/firestore';
 import { Observable, from } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
@@ -16,11 +16,14 @@ export class AuthService {
       switchMap((userCredential: UserCredential) => {
         const uid = userCredential.user.uid;
         const userRef = doc(this.firestore, `users/${uid}`);
-        return from(setDoc(userRef, {
-          email,
-          role,
-          createdAt: new Date()
-        })).pipe(
+        return from(
+          setDoc(userRef, {
+            email,
+            role,
+            // Use serverTimestamp() for proper Firestore timestamp serialization
+            createdAt: serverTimestamp()
+          })
+        ).pipe(
           map(() => userCredential)
         );
       })

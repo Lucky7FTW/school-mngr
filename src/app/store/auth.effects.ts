@@ -7,26 +7,27 @@ import { AuthService } from '../services/auth.service';
 import {
   catchError,
   map,
+  mergeMap,
   of,
   switchMap,
-  mergeMap
+  tap
 } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Injectable()
 export class AuthEffects {
   constructor(
     private actions$: Actions,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   // -- LOGIN EFFECT --
   login$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.loginStart),
-      // switchMap gets { email, password } from the action
       switchMap(({ email, password }) =>
         this.authService.login(email, password).pipe(
-          // If success, get role:
           mergeMap((userCredential) => {
             const uid = userCredential.user.uid;
             return this.authService.getUserRole(uid).pipe(
@@ -47,13 +48,39 @@ export class AuthEffects {
       ofType(AuthActions.signUpStart),
       switchMap(({ email, password, role }) =>
         this.authService.signUp(email, password, role).pipe(
-          map((userCredential) =>
-            AuthActions.signUpSuccess({ userCredential })
-          ),
+          mergeMap((userCredential) => {
+            const uid = userCredential.user.uid;
+            return this.authService.getUserRole(uid).pipe(
+              map((fetchedRole) =>
+                AuthActions.signUpSuccess({
+                  userCredential,
+                  role: fetchedRole 
+                })
+              )
+            );
+          }),
           catchError((error) => of(AuthActions.signUpFailure({ error })))
         )
       )
     )
   );
 
+  // -- REDIRECT EFFECT --
+  // This effect listens for both loginSuccess and signUpSuccess actions.
+  // Based on the role, it navigates to the respective dashboard.
+  redirectAfterAuth$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.loginSuccess, AuthActions.signUpSuccess),
+      tap(({ role }) => {
+        if (role === 'admin') {
+          this.router.navigate(['/admin-dashboard']);
+        } else if (role === 'professor') {
+          this.router.navigate(['/professor-dashboard']);
+        } else {
+          this.router.navigate(['/student-dashboard']);
+        }
+      })
+    ),
+    { dispatch: false }
+  );
 }
