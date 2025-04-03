@@ -12,8 +12,8 @@ import { firebaseConfig } from './environments/firebase.config';
 import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 
-// Import the Auth reducer and effects
-import { reducers } from './app/store/index';       
+// Import the reducers and Auth effects from your store setup
+import { reducers } from './app/store/index';
 import { AuthEffects } from './app/store/auth.effects';
 
 bootstrapApplication(AppComponent, {
@@ -22,8 +22,6 @@ bootstrapApplication(AppComponent, {
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
-
-    // NgRx store
     provideStore(reducers),
     provideEffects([AuthEffects]),
   ]
