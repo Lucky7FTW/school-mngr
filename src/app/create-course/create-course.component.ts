@@ -7,23 +7,23 @@ import { UserService, User } from '../services/user.service';
 import { Auth, authState } from '@angular/fire/auth';
 
 @Component({
-  selector: 'app-professor-dashboard',
+  selector: 'app-create-course',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './professor-dashboard.component.html',
-  styleUrls: ['./professor-dashboard.component.css']
+  templateUrl: './create-course.component.html',
+  styleUrls: ['./create-course.component.css']
 })
-export class ProfessorDashboardComponent implements OnInit {
+export class CreateCourseComponent implements OnInit {
   courseName = '';
   courseDescription = '';
-  // We'll store the selected student UIDs in this array.
+  // Array to hold selected student UIDs.
   selectedStudents: string[] = [];
   
-  // Professor ID will be set based on the authenticated user.
+  // Current professor's UID (retrieved from the auth state)
   professorId: string = '';
   message = '';
 
-  // Observable that emits the list of available students.
+  // Observable of available students from Firestore.
   availableStudents$!: Observable<User[]>;
 
   constructor(
@@ -33,21 +33,19 @@ export class ProfessorDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Fetch the list of students from Firestore.
+    // Load available students (users with role "student")
     this.availableStudents$ = this.userService.getStudents();
-
-    // Subscribe to auth state changes and set the professorId from the authenticated user.
+    // Subscribe to the current auth state and set the professorId.
     authState(this.auth).subscribe(user => {
       if (user) {
         this.professorId = user.uid;
       } else {
-        // Optionally, handle the case when there's no authenticated user.
-        console.error('No authenticated user found.');
+        console.error("No authenticated user found.");
       }
     });
   }
 
-  // Called when a student checkbox is checked/unchecked.
+  // Handle checkbox changes for student assignment.
   onStudentCheckboxChange(event: any): void {
     const uid = event.target.value;
     if (event.target.checked) {
@@ -57,19 +55,20 @@ export class ProfessorDashboardComponent implements OnInit {
     }
   }
 
+  // Create a new course document in Firestore.
   createCourse(): void {
     const newCourse: Course = {
       name: this.courseName,
       description: this.courseDescription,
       assignedStudents: this.selectedStudents,
       createdBy: this.professorId,
-      createdAt: null // will be set via serverTimestamp in the service
+      createdAt: null // Will be set in the service via serverTimestamp.
     };
 
     this.courseService.createCourse(newCourse).subscribe({
       next: () => {
         this.message = 'Course created successfully!';
-        // Reset form fields
+        // Reset the form fields.
         this.courseName = '';
         this.courseDescription = '';
         this.selectedStudents = [];
