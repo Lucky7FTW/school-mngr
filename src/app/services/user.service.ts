@@ -1,6 +1,12 @@
 // src/app/services/user.service.ts
 import { Injectable } from '@angular/core';
-import { Firestore, collection, query, where, collectionData } from '@angular/fire/firestore';
+import {
+  Firestore,
+  collection,
+  query,
+  where,
+  collectionData
+} from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
 export interface User {
@@ -16,6 +22,7 @@ export interface User {
 export class UserService {
   constructor(private firestore: Firestore) {}
 
+  // Only fetch users with role 'student'
   getStudents(): Observable<User[]> {
     const usersRef = collection(this.firestore, 'users');
     const q = query(usersRef, where('role', '==', 'student'));

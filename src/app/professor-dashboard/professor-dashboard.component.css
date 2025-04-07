@@ -6,25 +6,38 @@
     background-color: #f9f9f9;
   }
   
+  /* Table styling */
+  .courses-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .courses-table th,
+  .courses-table td {
+    border: 1px solid #cccccc;
+    padding: 8px;
+  }
+  
   /* Modal styling */
   .modal {
     position: fixed;
-    z-index: 1;
+    z-index: 999;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: auto; 
     background-color: rgba(0,0,0,0.4);
   }
   
   .modal-content {
     background-color: #fff;
-    margin: 10% auto;
+    margin: 5% auto;
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
-    max-width: 600px;
+    max-width: 650px;
     border-radius: 8px;
     position: relative;
   }
@@ -38,28 +51,21 @@
     font-weight: bold;
     cursor: pointer;
   }
-  
   .close:hover,
   .close:focus {
     color: black;
   }
   
-  /* Table styling */
-  .courses-table {
+  .students-list table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: 10px;
   }
   
-  .courses-table th,
-  .courses-table td {
+  .students-list th,
+  .students-list td {
     border: 1px solid #cccccc;
-    padding: 8px;
+    padding: 5px;
     text-align: left;
-  }
-  
-  .courses-table th {
-    background-color: #000000;
-    color: #ffffff;
   }
   

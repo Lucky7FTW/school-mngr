@@ -2,13 +2,15 @@
     <h1>Professor Dashboard</h1>
     <p>Welcome to your professor dashboard!</p>
     
-    <!-- Button to open the create course modal -->
-    <button class="w3-button w3-black" (click)="openModal()">Create Course</button>
-    
-    <!-- Modal for creating a course -->
-    <div class="modal" *ngIf="isModalOpen">
+    <!-- Button to open the "Create Course" modal -->
+    <button class="w3-button w3-black" (click)="openCreateCourseModal()">
+      Create Course
+    </button>
+  
+    <!-- CREATE COURSE MODAL -->
+    <div class="modal" *ngIf="isCreateCourseModalOpen">
       <div class="modal-content">
-        <span class="close" (click)="closeModal()">&times;</span>
+        <span class="close" (click)="closeCreateCourseModal()">&times;</span>
         <h2>Create Course</h2>
         <form (ngSubmit)="createCourse()">
           <p>
@@ -30,36 +32,82 @@
               required
             ></textarea>
           </p>
-          <p>
-            <button class="w3-button w3-black" type="submit">Create Course</button>
-          </p>
+          <button class="w3-button w3-black" type="submit">
+            Create Course
+          </button>
         </form>
-        <p *ngIf="message">{{ message }}</p>
+        <p *ngIf="createCourseMessage">{{ createCourseMessage }}</p>
       </div>
     </div>
-    
+  
     <hr />
-    <!-- Courses Table -->
+  
+    <!-- COURSES TABLE -->
     <h2>Your Courses</h2>
     <table class="courses-table">
       <thead>
         <tr>
           <th>Course Name</th>
-          <th>Description</th>
-          <th>Assigned Students</th>
-          <th>Created At</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let course of courses$ | async">
+        <tr
+          *ngFor="let course of courses$ | async"
+          (click)="onCourseClick(course)"
+          style="cursor: pointer;"
+        >
           <td>{{ course.name }}</td>
-          <td>{{ course.description }}</td>
-          <td>{{ course.assignedStudents.join(', ') || 'None' }}</td>
-          <td>
-            {{ course.createdAt ? (course.createdAt.toDate() | date:'short') : 'N/A' }}
-          </td>
         </tr>
       </tbody>
     </table>
+  </div>
+  
+  <!-- VIEW COURSE MODAL: Shown when user clicks on a course row -->
+  <div class="modal" *ngIf="isViewCourseModalOpen && selectedCourse">
+    <div class="modal-content">
+      <span class="close" (click)="closeViewCourseModal()">&times;</span>
+      <h2>View Course: {{ selectedCourse.name }}</h2>
+      <p><strong>Description: </strong>{{ selectedCourse.description }}</p>
+  
+      <h3>Assign Students & Set Attendance</h3>
+      <div class="students-list" *ngIf="allStudents$ | async as students">
+        <table>
+          <thead>
+            <tr>
+              <th>Student Email</th>
+              <th>Assigned?</th>
+              <th>Attendance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let student of students">
+              <td>{{ student.email }}</td>
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="(selectedCourse?.assignedStudents || []).includes(student.uid)"
+                  (change)="toggleStudentAssignment(student.uid, $any($event.target).checked)"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  [value]="selectedCourse?.attendanceRecords?.[student.uid] ?? ''"
+                  (input)="updateStudentAttendance(student.uid, $any($event.target).value)"
+                  style="width: 60px;"
+                />
+                %
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <button class="w3-button w3-black" (click)="saveCourseChanges()">
+        Save Changes
+      </button>
+  
+      <p *ngIf="viewCourseMessage">{{ viewCourseMessage }}</p>
+    </div>
   </div>
   
