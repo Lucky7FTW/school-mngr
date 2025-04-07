@@ -1,25 +1,39 @@
-/* src/app/professor-dashboard/professor-dashboard.component.css */
 .dashboard-container {
-    max-width: 600px;
+    max-width: 800px;
     margin: auto;
     text-align: center;
     padding: 20px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f9f9f9;
   }
   
   .dashboard-container h1 {
     margin-bottom: 10px;
   }
   
-  .dashboard-container form p {
-    margin-bottom: 15px;
+  .dashboard-container hr {
+    margin: 20px 0;
   }
   
-  .dashboard-container button.w3-button {
+  .w3-button {
+    margin-bottom: 20px;
+  }
+  
+  /* Table styling */
+  .courses-table {
     width: 100%;
-    padding: 12px;
-    font-size: 16px;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .courses-table th,
+  .courses-table td {
+    border: 1px solid #cccccc;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .courses-table th {
+    background-color: #000000;
+    color: #ffffff;
   }
   

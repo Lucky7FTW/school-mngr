@@ -66,8 +66,7 @@ export class AuthEffects {
   );
 
   // -- REDIRECT EFFECT --
-  // This effect listens for both loginSuccess and signUpSuccess actions.
-  // Based on the role, it navigates to the respective dashboard.
+  // Redirects to the appropriate dashboard after login or sign-up success.
   redirectAfterAuth$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.loginSuccess, AuthActions.signUpSuccess),

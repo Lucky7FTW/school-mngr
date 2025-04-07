@@ -14,17 +14,21 @@ import { Auth, authState } from '@angular/fire/auth';
   styleUrls: ['./professor-dashboard.component.css']
 })
 export class ProfessorDashboardComponent implements OnInit {
+  // Fields for course creation
   courseName = '';
   courseDescription = '';
-  // We'll store the selected student UIDs in this array.
   selectedStudents: string[] = [];
-  
-  // Professor ID will be set based on the authenticated user.
-  professorId: string = '';
   message = '';
 
-  // Observable that emits the list of available students.
+  // Current professor's UID (set from auth state)
+  professorId: string = '';
+  // Toggle variable for displaying the create-course form
+  showCreateForm: boolean = false;
+
+  // Observable for available students (users with role "student")
   availableStudents$!: Observable<User[]>;
+  // Observable for courses created by the professor
+  courses$!: Observable<Course[]>;
 
   constructor(
     private courseService: CourseService,
@@ -33,18 +37,21 @@ export class ProfessorDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Fetch the list of students from Firestore.
+    // Get available students from Firestore.
     this.availableStudents$ = this.userService.getStudents();
-
-    // Subscribe to auth state changes and set the professorId from the authenticated user.
+    // Subscribe to auth state changes and set professorId; then load courses.
     authState(this.auth).subscribe(user => {
       if (user) {
         this.professorId = user.uid;
+        this.loadCourses();
       } else {
-        // Optionally, handle the case when there's no authenticated user.
         console.error('No authenticated user found.');
       }
     });
+  }
+
+  toggleCreateForm(): void {
+    this.showCreateForm = !this.showCreateForm;
   }
 
   // Called when a student checkbox is checked/unchecked.
@@ -63,21 +70,28 @@ export class ProfessorDashboardComponent implements OnInit {
       description: this.courseDescription,
       assignedStudents: this.selectedStudents,
       createdBy: this.professorId,
-      createdAt: null // will be set via serverTimestamp in the service
+      createdAt: null // will be set via serverTimestamp() in the service
     };
 
     this.courseService.createCourse(newCourse).subscribe({
       next: () => {
         this.message = 'Course created successfully!';
-        // Reset form fields
+        // Reset form fields.
         this.courseName = '';
         this.courseDescription = '';
         this.selectedStudents = [];
+        // Reload the courses list.
+        this.loadCourses();
       },
       error: (err) => {
         this.message = 'Error creating course.';
         console.error('Course creation error:', err);
       }
     });
+  }
+
+  loadCourses(): void {
+    // Get courses created by the current professor.
+    this.courses$ = this.courseService.getCourses(this.professorId);
   }
 }

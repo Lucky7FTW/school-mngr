@@ -1,6 +1,5 @@
-// src/app/services/course.service.ts
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, serverTimestamp } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, serverTimestamp, query, where, collectionData } from '@angular/fire/firestore';
 import { from, Observable } from 'rxjs';
 
 export interface Course {
@@ -9,7 +8,7 @@ export interface Course {
   description: string;
   assignedStudents: string[];
   createdBy: string;
-  createdAt: any; // Firestore timestamp
+  createdAt: any;
 }
 
 @Injectable({
@@ -29,5 +28,11 @@ export class CourseService {
         createdAt: serverTimestamp()
       })
     );
+  }
+
+  getCourses(professorId: string): Observable<Course[]> {
+    const coursesCollection = collection(this.firestore, 'courses');
+    const q = query(coursesCollection, where('createdBy', '==', professorId));
+    return collectionData(q, { idField: 'id' }) as Observable<Course[]>;
   }
 }
