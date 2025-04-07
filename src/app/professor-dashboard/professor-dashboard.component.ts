@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { CourseService, Course } from '../services/course.service';
-import { UserService, User } from '../services/user.service';
 import { Auth, authState } from '@angular/fire/auth';
 
 @Component({
@@ -14,32 +13,21 @@ import { Auth, authState } from '@angular/fire/auth';
   styleUrls: ['./professor-dashboard.component.css']
 })
 export class ProfessorDashboardComponent implements OnInit {
-  // Fields for course creation
   courseName = '';
   courseDescription = '';
-  selectedStudents: string[] = [];
   message = '';
-
-  // Current professor's UID (set from auth state)
   professorId: string = '';
-  // Toggle variable for displaying the create-course form
-  showCreateForm: boolean = false;
+  isModalOpen: boolean = false;
 
-  // Observable for available students (users with role "student")
-  availableStudents$!: Observable<User[]>;
-  // Observable for courses created by the professor
   courses$!: Observable<Course[]>;
 
   constructor(
     private courseService: CourseService,
-    private userService: UserService,
     private auth: Auth
   ) {}
 
   ngOnInit(): void {
-    // Get available students from Firestore.
-    this.availableStudents$ = this.userService.getStudents();
-    // Subscribe to auth state changes and set professorId; then load courses.
+    // Subscribe to auth state changes and set professorId.
     authState(this.auth).subscribe(user => {
       if (user) {
         this.professorId = user.uid;
@@ -50,25 +38,28 @@ export class ProfessorDashboardComponent implements OnInit {
     });
   }
 
-  toggleCreateForm(): void {
-    this.showCreateForm = !this.showCreateForm;
+  openModal(): void {
+    this.isModalOpen = true;
+    this.message = '';
   }
 
-  // Called when a student checkbox is checked/unchecked.
-  onStudentCheckboxChange(event: any): void {
-    const uid = event.target.value;
-    if (event.target.checked) {
-      this.selectedStudents.push(uid);
-    } else {
-      this.selectedStudents = this.selectedStudents.filter(s => s !== uid);
-    }
+  closeModal(): void {
+    this.isModalOpen = false;
+    this.message = '';
   }
 
   createCourse(): void {
+    // Validate that the required fields are not empty.
+    if (!this.courseName.trim() || !this.courseDescription.trim()) {
+      this.message = 'Course Name and Description cannot be empty.';
+      return;
+    }
+
     const newCourse: Course = {
       name: this.courseName,
       description: this.courseDescription,
-      assignedStudents: this.selectedStudents,
+      // No students assigned.
+      assignedStudents: [],
       createdBy: this.professorId,
       createdAt: null // will be set via serverTimestamp() in the service
     };
@@ -79,9 +70,8 @@ export class ProfessorDashboardComponent implements OnInit {
         // Reset form fields.
         this.courseName = '';
         this.courseDescription = '';
-        this.selectedStudents = [];
-        // Reload the courses list.
         this.loadCourses();
+        this.closeModal();
       },
       error: (err) => {
         this.message = 'Error creating course.';
@@ -91,7 +81,6 @@ export class ProfessorDashboardComponent implements OnInit {
   }
 
   loadCourses(): void {
-    // Get courses created by the current professor.
     this.courses$ = this.courseService.getCourses(this.professorId);
   }
 }
