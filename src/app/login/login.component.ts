@@ -16,6 +16,7 @@ import { Observable } from 'rxjs';
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css'],
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
 })

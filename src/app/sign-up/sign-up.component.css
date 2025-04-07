@@ -1,0 +1,57 @@
+/* sign-up.component.css */
+
+/* Container styling */
+.w3-container {
+    max-width: 400px;
+    margin: auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Header styling */
+  .w3-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333333;
+  }
+  
+  /* Label styling */
+  .w3-container label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #555555;
+  }
+  
+  /* Input and Select styling */
+  .w3-container input.w3-input,
+  .w3-container select.w3-select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+  }
+  
+  /* Button styling */
+  .w3-container button.w3-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  /* Black button override */
+  .w3-container button.w3-black {
+    background-color: #000000;
+    color: #ffffff;
+  }
+  
+  .w3-container button.w3-black:hover {
+    background-color: #333333;
+  }
+  

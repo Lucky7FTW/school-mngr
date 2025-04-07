@@ -1,5 +1,3 @@
-// src/app/sign-up/sign-up.component.ts
-
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -11,6 +9,7 @@ import { signUpStart } from '../store/auth.actions';
 @Component({
   selector: 'app-sign-up',
   templateUrl: './sign-up.component.html',
+  styleUrls: ['./sign-up.component.css'],
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
 })

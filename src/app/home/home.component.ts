@@ -12,4 +12,8 @@ export class HomeComponent {
   onLogin(): void {
     this.router.navigate(['/login']);
   }
+  
+  onSignUp(): void {
+    this.router.navigate(['/sign-up']);
+  }
 }
