@@ -5,17 +5,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-professor-dashboard',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="dashboard-container">
-      <h1>Professor Dashboard</h1>
-      <p>Welcome to your professor dashboard!</p>
-    </div>
-  `,
-  styles: [`
-    .dashboard-container {
-      text-align: center;
-      margin-top: 50px;
-    }
-  `]
+  templateUrl: './professor-dashboard.component.html',
+  styleUrls: ['./professor-dashboard.component.css']
 })
 export class ProfessorDashboardComponent {}

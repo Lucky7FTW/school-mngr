@@ -5,17 +5,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-student-dashboard',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="dashboard-container">
-      <h1>Student Dashboard</h1>
-      <p>Welcome to your student dashboard!</p>
-    </div>
-  `,
-  styles: [`
-    .dashboard-container {
-      text-align: center;
-      margin-top: 50px;
-    }
-  `]
+  templateUrl: './student-dashboard.component.html',
+  styleUrls: ['./student-dashboard.component.css']
 })
 export class StudentDashboardComponent {}
