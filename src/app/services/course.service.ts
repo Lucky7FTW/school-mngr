@@ -6,12 +6,14 @@ import {
   addDoc,
   doc,
   updateDoc,
+  getDoc,
   serverTimestamp,
   query,
   where,
   collectionData
 } from '@angular/fire/firestore';
 import { from, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Course {
   id?: string;
@@ -48,5 +50,20 @@ export class CourseService {
     const coursesRef = collection(this.firestore, 'courses');
     const q = query(coursesRef, where('createdBy', '==', professorId));
     return collectionData(q, { idField: 'id' }) as Observable<Course[]>;
+  }
+  
+  getCourseById(courseId: string): Observable<Course> {
+    const courseDocRef = doc(this.firestore, `courses/${courseId}`);
+    return from(getDoc(courseDocRef)).pipe(
+      map(snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.data() as Course;
+          data.id = snapshot.id;
+          return data;
+        } else {
+          throw new Error('Course not found');
+        }
+      })
+    );
   }
 }

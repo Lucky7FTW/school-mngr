@@ -1,0 +1,42 @@
+/* Basic styles for editable fields */
+.field {
+    margin-bottom: 15px;
+  }
+  
+  .field label {
+    display: inline-block;
+    width: 120px;
+    font-weight: bold;
+  }
+  
+  .field input, .field textarea {
+    width: 300px;
+    padding: 5px;
+  }
+  
+  /* Dropdown container styling */
+  .dropdown-container {
+    margin-bottom: 15px;
+  }
+  
+  .dropdown-container label {
+    margin-right: 10px;
+  }
+  
+  .dropdown-container select {
+    margin-right: 10px;
+  }
+  
+  /* Table styles */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  
+  th, td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+  }
+  

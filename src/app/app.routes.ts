@@ -4,6 +4,7 @@ import { SignUpComponent } from './sign-up/sign-up.component';
 import { LoginComponent } from './login/login.component';
 import { StudentDashboardComponent } from './student-dashboard/student-dashboard.component';
 import { ProfessorDashboardComponent } from './professor-dashboard/professor-dashboard.component';
+import { ProfessorCourseDetailComponent } from './professor-course-detail/professor-course-detail.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 
 export const routes: Routes = [
@@ -13,6 +14,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'student-dashboard', component: StudentDashboardComponent },
   { path: 'professor-dashboard', component: ProfessorDashboardComponent },
+  { path: 'professor/course/:id', component: ProfessorCourseDetailComponent },
   { path: 'admin-dashboard', component: AdminDashboardComponent },
   // Redirect any unknown paths back to home
   { path: '**', redirectTo: '' }
