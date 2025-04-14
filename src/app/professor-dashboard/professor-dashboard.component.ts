@@ -102,9 +102,20 @@ export class ProfessorDashboardComponent implements OnInit {
   // -----------------------------
   onCourseClick(course: Course): void {
     // Navigate to the detailed view for the selected course
-    // Ensure course.id exists; otherwise, handle appropriately.
     if (course.id) {
       this.router.navigate(['/professor/course', course.id]);
     }
+  }
+
+  // -----------------------------
+  // LOGOUT
+  // -----------------------------
+  onLogout(): void {
+    this.auth.signOut().then(() => {
+      // E.g. navigate to login page
+      this.router.navigate(['/login']);
+    }).catch((error) => {
+      console.error('Logout Error:', error);
+    });
   }
 }

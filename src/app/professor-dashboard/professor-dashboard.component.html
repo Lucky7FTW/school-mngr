@@ -1,9 +1,15 @@
-<!-- src/app/professor-dashboard/professor-dashboard.component.html -->
 <div class="dashboard-container">
+  <!-- Top row with logout button -->
+  <div style="text-align: right; margin-bottom: 15px;">
+    <button class="w3-button w3-red" (click)="onLogout()">
+      Logout
+    </button>
+  </div>
+
   <h1>Professor Dashboard</h1>
   <p>Welcome to your professor dashboard!</p>
   
-  <!-- Button to open the "Create Course" modal -->
+  <!-- CREATE COURSE BUTTON -->
   <button class="w3-button w3-black" (click)="openCreateCourseModal()">
     Create Course
   </button>
@@ -43,7 +49,6 @@
 
   <hr />
 
-  <!-- COURSES TABLE -->
   <h2>Your Courses</h2>
   <table class="courses-table">
     <thead>
