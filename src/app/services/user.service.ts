@@ -28,4 +28,17 @@ export class UserService {
     const q = query(usersRef, where('role', '==', 'student'));
     return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
   }
+
+  /**
+   * NEW: Fetch users with role='professor'
+   * For admin usage: assign a professor to a course, etc.
+   */
+  getProfessors(): Observable<User[]> {
+    const usersRef = collection(this.firestore, 'users');
+    const q = query(usersRef, where('role', '==', 'professor'));
+    return collectionData(q, { idField: 'uid' }) as Observable<User[]>;
+  }
+
+  // Possibly getAllUsers, getUserById, etc.
 }
+  
