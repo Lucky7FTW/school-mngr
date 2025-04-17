@@ -16,6 +16,7 @@ import { CourseService, Course } from '../services/course.service';
 })
 export class StudentDashboardComponent implements OnInit {
   courses$!: Observable<Course[]>;
+  studentUid = ''; // We'll store the current student's UID here for refresh
 
   constructor(
     private auth: Auth,
@@ -24,18 +25,29 @@ export class StudentDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Once the student is authenticated, fetch only the courses where
-    // assignedStudents contains this student's UID.
+    // Once the student is authenticated, store their UID
+    // and fetch their assigned courses
     authState(this.auth).subscribe(user => {
       if (user) {
-        const studentUid = user.uid;
-        // Make sure we have the method getCoursesForStudent(...) in CourseService
-        this.courses$ = this.courseService.getCoursesForStudent(studentUid);
+        this.studentUid = user.uid;
+        this.refreshCourses();
       } else {
         console.error('No authenticated student found.');
         this.router.navigate(['/login']);
       }
     });
+  }
+
+  /**
+   * Called by the refresh button to re-fetch 
+   * courses for the stored 'studentUid'.
+   */
+  refreshCourses(): void {
+    if (!this.studentUid) {
+      console.warn('No studentUid found. Cannot refresh courses.');
+      return;
+    }
+    this.courses$ = this.courseService.getCoursesForStudent(this.studentUid);
   }
 
   onCourseClick(course: Course): void {
