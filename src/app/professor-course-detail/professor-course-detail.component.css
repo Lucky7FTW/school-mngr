@@ -1,42 +1,98 @@
-/* Basic styles for editable fields */
-.field {
-    margin-bottom: 15px;
-  }
-  
-  .field label {
-    display: inline-block;
-    width: 120px;
-    font-weight: bold;
-  }
-  
-  .field input, .field textarea {
-    width: 300px;
-    padding: 5px;
-  }
-  
-  /* Dropdown container styling */
-  .dropdown-container {
-    margin-bottom: 15px;
-  }
-  
-  .dropdown-container label {
-    margin-right: 10px;
-  }
-  
-  .dropdown-container select {
-    margin-right: 10px;
-  }
-  
-  /* Table styles */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  
-  th, td {
-    border: 1px solid #ccc;
-    padding: 5px;
-    text-align: left;
-  }
-  
+:root {
+  /* palette (reuse from dashboard) */
+  --bg-light  : #f9f9f9;
+  --bg-white  : #fff;
+  --text-main : #333;
+  --text-sub  : #777;
+  --border    : #e0e0e0;
+  --hover-row : #f7f7f7;
+
+  --radius    : 8px;
+  --shadow    : 0 2px 8px rgba(0,0,0,.12);
+}
+
+/* ───────── container ───────── */
+.edit-container {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: var(--bg-light);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: var(--text-main);
+}
+
+h2, h3, h4 { margin-top: 0; }
+
+.field   { margin-bottom: 1rem; text-align: left; }
+.field label { display:block; font-weight:600; margin-bottom: .25rem; }
+.field input, .field textarea, .field select {
+  width: 100%;
+  padding: .5rem .6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+  background: var(--bg-white);
+}
+
+/* ───────── table ───────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  table-layout: fixed;
+}
+th, td {
+  padding: .6rem .8rem;
+  border: 1px solid var(--border);
+  word-wrap: break-word;
+}
+thead { background: var(--text-main); color: var(--bg-white); }
+tbody tr:nth-child(even) { background: var(--bg-white); }
+tbody tr:nth-child(odd)  { background: var(--bg-light); }
+tbody tr:hover           { background: var(--hover-row); }
+
+/* numeric attendance box */
+td input[type="number"] {
+  width: 70px;
+  padding: .3rem .4rem;
+  text-align: right;
+}
+
+/* ───────── buttons ───────── */
+button {
+  padding: .55rem 1rem;
+  margin: .4rem .25rem 0 0;
+  border: none;
+  border-radius: var(--radius);
+  font: inherit;
+  cursor: pointer;
+  transition: background .2s;
+}
+button.primary  { background:#000; color:#fff; }
+button.primary:hover { background:#222; }
+
+button.danger   { background:#c0392b; color:#fff; }
+button.danger:hover { background:#e74c3c; }
+
+button.outline {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+button.outline:hover { background: var(--hover-row); }
+
+/* message */
+p.error-msg, p.success-msg {
+  margin-top: .75rem;
+  font-weight:600;
+}
+p.error-msg   { color: #c0392b; }
+p.success-msg { color: #27ae60; }
+
+/* responsive */
+@media(max-width:600px){
+  .edit-container{ margin:1rem; padding:1rem; }
+  th, td{ padding:.5rem; }
+  button{ width:100%; margin:.5rem 0; }
+}
