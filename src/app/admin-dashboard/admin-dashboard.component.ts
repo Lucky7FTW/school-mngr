@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { Auth } from '@angular/fire/auth';
+import { Observable } from 'rxjs';
 
 import { CourseService, Course } from '../services/course.service';
 import { UserService, User } from '../services/user.service';
@@ -11,114 +11,84 @@ import { UserService, User } from '../services/user.service';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './admin-dashboard.component.html',
-  styleUrls: ['./admin-dashboard.component.css']
+  styleUrls: ['./admin-dashboard.component.css'],
+  imports: [CommonModule, FormsModule]
 })
 export class AdminDashboardComponent implements OnInit {
-  // -- Fields for the 'Create Course' modal --
+  /* ───────── create‑course modal state ───────── */
   isCreateCourseModalOpen = false;
   courseName = '';
   courseDescription = '';
   selectedProfessorUid = '';
   createCourseMessage = '';
 
-  // -- Observables --
-  professors$!: Observable<User[]>; // All professors
-  courses$!: Observable<Course[]>;   // All courses
+  /* ───────── delete‑confirm modal state ───────── */
+  courseToDeleteId: string | null = null;
 
-  // -- Local dictionary to map professor UIDs -> emails --
-  professorEmailMap: { [uid: string]: string } = {};
+  /* ───────── data streams ───────── */
+  professors$!: Observable<User[]>;
+  courses$!: Observable<Course[]>;
+  professorEmailMap: Record<string, string> = {};
 
-  // -------------------------------------------------------------------------
-  // CONSTRUCTOR: Where we inject Auth, Router, plus our services
-  // -------------------------------------------------------------------------
   constructor(
     private auth: Auth,
     private router: Router,
-    private courseService: CourseService,
-    private userService: UserService
+    private courseSvc: CourseService,
+    private userSvc: UserService
   ) {}
 
-  // -------------------------------------------------------------------------
-  // LIFECYCLE: OnInit
-  // -------------------------------------------------------------------------
   ngOnInit(): void {
-    // 1) Load all professors & build an email map
-    this.professors$ = this.userService.getProfessors();
-    this.professors$.subscribe((profs) => {
-      this.professorEmailMap = {};
-      profs.forEach((p) => {
-        this.professorEmailMap[p.uid] = p.email;
-      });
-    });
+    /* professors for dropdown */
+    this.professors$ = this.userSvc.getProfessors();
+    this.professors$.subscribe(p =>
+      p.forEach(prof => (this.professorEmailMap[prof.uid] = prof.email))
+    );
 
-    // 2) Load all courses
-    this.courses$ = this.courseService.getAllCourses();
+    /* initial course list */
+    this.courses$ = this.courseSvc.getAllCourses();
   }
 
-  // -------------------------------------------------------------------------
-  // LOGOUT METHOD
-  // -------------------------------------------------------------------------
-  onLogout(): void {
-    this.auth.signOut()
-      .then(() => {
-        // e.g., navigate to login page
-        this.router.navigate(['/login']);
-      })
-      .catch(err => {
-        console.error('Logout Error:', err);
-      });
+  /* ───────── auth ───────── */
+  onLogout() {
+    this.auth.signOut().then(() => this.router.navigate(['/login']));
   }
 
-  // -------------------------------------------------------------------------
-  // MODAL TOGGLE
-  // -------------------------------------------------------------------------
-  openCreateCourseModal(): void {
-    this.isCreateCourseModalOpen = true;
-    this.createCourseMessage = '';
-  }
+  /* ───────── create course workflow ───────── */
+  openCreateCourseModal()  { this.isCreateCourseModalOpen = true; }
+  closeCreateCourseModal() { this.isCreateCourseModalOpen = false; }
 
-  closeCreateCourseModal(): void {
-    this.isCreateCourseModalOpen = false;
-    this.createCourseMessage = '';
-  }
-
-  // -------------------------------------------------------------------------
-  // CREATE COURSE
-  // -------------------------------------------------------------------------
-  createCourse(): void {
-    if (!this.courseName.trim() ||
-        !this.courseDescription.trim() ||
-        !this.selectedProfessorUid) {
-      this.createCourseMessage = 'Please fill out all fields.';
-      return;
+  createCourse() {
+    if (!this.courseName.trim() || !this.courseDescription.trim() || !this.selectedProfessorUid) {
+      this.createCourseMessage = 'Please fill out all fields.'; return;
     }
-
-    const newCourse: Course = {
+    const payload: Course = {
       name: this.courseName,
       description: this.courseDescription,
       assignedStudents: [],
       attendanceRecords: {},
-      professorId: this.selectedProfessorUid,  // Assign chosen professor
-      createdBy: 'admin',   // or actual admin user ID
+      professorId: this.selectedProfessorUid,
+      createdBy: 'admin',
       createdAt: null
     };
-
-    this.courseService.createCourse(newCourse).subscribe({
+    this.courseSvc.createCourse(payload).subscribe({
       next: () => {
-        this.createCourseMessage = 'Course created successfully!';
-        // Reset form fields
-        this.courseName = '';
-        this.courseDescription = '';
-        this.selectedProfessorUid = '';
-        // Reload to show new course in the table
-        this.courses$ = this.courseService.getAllCourses();
+        this.closeCreateCourseModal();
+        this.courseName = this.courseDescription = this.selectedProfessorUid = '';
+        this.courses$ = this.courseSvc.getAllCourses();
       },
-      error: (err) => {
-        console.error('Create Course Error:', err);
-        this.createCourseMessage = 'Error creating course.';
-      }
+      error: e => { console.error(e); this.createCourseMessage = 'Error.'; }
+    });
+  }
+
+  /* ───────── delete workflow ───────── */
+  promptDelete(id: string) { this.courseToDeleteId = id; }
+  cancelDelete()           { this.courseToDeleteId = null; }
+  confirmDelete() {
+    if (!this.courseToDeleteId) return;
+    this.courseSvc.deleteCourse(this.courseToDeleteId).subscribe({
+      next : () => { this.courses$ = this.courseSvc.getAllCourses(); this.courseToDeleteId = null; },
+      error: e => { console.error(e); alert('Delete failed'); this.courseToDeleteId = null; }
     });
   }
 }
