@@ -1,35 +1,43 @@
+// src/app/student-dashboard/student-dashboard.component.ts
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
-import { Router } from '@angular/router';
+import { CommonModule }   from '@angular/common';
+import { FormsModule }    from '@angular/forms';
+import { Observable }     from 'rxjs';
+import { Router }         from '@angular/router';
 import { Auth, authState } from '@angular/fire/auth';
+import { Store }          from '@ngrx/store';
 
 import { CourseService, Course } from '../services/course.service';
+import { addLogStart }          from '../log/log.actions';      // ← log action
 
 @Component({
-  selector: 'app-student-dashboard',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  selector   : 'app-student-dashboard',
+  standalone : true,
+  imports    : [CommonModule, FormsModule],
   templateUrl: './student-dashboard.component.html',
-  styleUrls: ['./student-dashboard.component.css']
+  styleUrls  : ['./student-dashboard.component.css']
 })
 export class StudentDashboardComponent implements OnInit {
+
   courses$!: Observable<Course[]>;
-  studentUid = ''; // We'll store the current student's UID here for refresh
+  studentUid = '';
 
   constructor(
-    private auth: Auth,
+    private auth : Auth,
     private router: Router,
-    private courseService: CourseService
+    private courseService: CourseService,
+    private store: Store                           // ← inject Store
   ) {}
 
+  /* ───────── INITIALISATION ───────── */
   ngOnInit(): void {
-    // Once the student is authenticated, store their UID
-    // and fetch their assigned courses
     authState(this.auth).subscribe(user => {
       if (user) {
         this.studentUid = user.uid;
+
+        /* log successful auth */
+        this.dispatchLog(`Student logged in (${user.email})`);
+
         this.refreshCourses();
       } else {
         console.error('No authenticated student found.');
@@ -38,29 +46,46 @@ export class StudentDashboardComponent implements OnInit {
     });
   }
 
-  /**
-   * Called by the refresh button to re-fetch 
-   * courses for the stored 'studentUid'.
-   */
+  /* ───────── REFRESH COURSES ───────── */
   refreshCourses(): void {
     if (!this.studentUid) {
-      console.warn('No studentUid found. Cannot refresh courses.');
+      console.warn('No studentUid. Cannot refresh courses.');
       return;
     }
     this.courses$ = this.courseService.getCoursesForStudent(this.studentUid);
+
+    /* log manual refresh */
+    this.dispatchLog('Clicked Refresh courses');
   }
 
+  /* ───────── COURSE CLICK ───────── */
   onCourseClick(course: Course): void {
-    // Optionally navigate to a detail page or open a modal, etc.
-    if (course.id) {
-      // e.g., navigate to /student/course/<courseId>
-      this.router.navigate(['/student/course', course.id]);
-    }
+    if (!course.id) return;
+
+    /* log navigation */
+    this.dispatchLog(`Opened course "${course.name}"`);
+
+    this.router.navigate(['/student/course', course.id]);
   }
 
+  /* ───────── LOGOUT ───────── */
   onLogout(): void {
     this.auth.signOut()
-      .then(() => this.router.navigate(['/login']))
+      .then(() => {
+        this.dispatchLog('Student logged out');
+        this.router.navigate(['/login']);
+      })
       .catch(err => console.error('Logout Error:', err));
+  }
+
+  /* ───────── HELPER TO DISPATCH A LOG ENTRY ───────── */
+  private dispatchLog(command: string){
+    this.store.dispatch(addLogStart({
+      entry:{
+        page   : 'student-dashboard',
+        command,
+        userUid: this.auth.currentUser?.uid ?? 'unauth'
+      }
+    }));
   }
 }

@@ -1,42 +1,66 @@
 // src/app/login/login.component.ts
-
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { AppState } from '../store';
-import { loginStart } from '../store/auth.actions';
-import {
-  selectAuthLoading,
-  selectAuthError,
-} from '../store/auth.selectors';
-import { Observable } from 'rxjs';
+import { Subscription } from 'rxjs';
+
+import { AppState }           from '../store';
+import { loginStart }         from '../store/auth.actions';
+import { selectAuthLoading,
+         selectAuthError   }  from '../store/auth.selectors';
+import { addLogStart }        from '../log/log.actions';  
 
 @Component({
-  selector: 'app-login',
+  selector   : 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css'],
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  styleUrls  : ['./login.component.css'],
+  standalone : true,
+  imports    : [CommonModule, FormsModule, RouterModule],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, OnDestroy {
+
   email = '';
   password = '';
 
-  loading$!: Observable<boolean>;
-  error$!: Observable<any>;
+  loading$ = this.store.select(selectAuthLoading);
+  error$   = this.store.select(selectAuthError);
+
+  private sub!: Subscription;
 
   constructor(private store: Store<AppState>, private router: Router) {}
 
   ngOnInit(): void {
-    // Listen to auth state if needed
-    this.loading$ = this.store.select(selectAuthLoading);
-    this.error$ = this.store.select(selectAuthError);
+    /* Watch for login failures to log them */
+    this.sub = this.error$.subscribe(err => {
+      if (err) {
+        this.store.dispatch(addLogStart({
+          entry:{
+            page   : 'login',
+            command: `Login FAILED for ${this.email} (${err.message ?? err})`,
+            userUid: 'unauth'                        // user not signed in yet
+          }
+        }));
+      }
+    });
   }
 
+  /* Clean up subscription */
+  ngOnDestroy(): void { this.sub?.unsubscribe(); }
+
+  /* ─────────  LOGIN  ───────── */
   onLogin() {
-    // Dispatch the loginStart action
+    /* Fire the auth flow */
     this.store.dispatch(loginStart({ email: this.email, password: this.password }));
+
+    /* Log the attempt immediately */
+    this.store.dispatch(addLogStart({
+      entry:{
+        page   : 'login',
+        command: `Login attempt for ${this.email}`,
+        userUid: 'unauth'
+      }
+    }));
   }
 }
