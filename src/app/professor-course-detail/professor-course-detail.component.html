@@ -1,80 +1,51 @@
-<div *ngIf="course">
-  <h2>Edit Course</h2>
-  <div class="field">
-    <label for="courseName">Course Name:</label>
-    <input id="courseName" type="text" [(ngModel)]="course.name" />
-  </div>
-  <div class="field">
-    <label for="courseDescription">Description:</label>
-    <textarea id="courseDescription" [(ngModel)]="course.description"></textarea>
-  </div>
+<div *ngIf="course" class="dashboard-container">
+  <button class="close" (click)="goBack()">← Back</button>
+  <h2>Edit Course: {{ course.name }}</h2>
+  <p>{{ course.description }}</p>
 
-  <h3>Assign Students & Set Attendance</h3>
+  <h3>Assign Students &amp; 7-Session Attendance</h3>
 
-  <!-- Dropdown to select a student to add -->
-  <div class="dropdown-container" *ngIf="allStudents$ | async as students">
-    <label for="studentSelect">Select Student:</label>
-    <select id="studentSelect" [(ngModel)]="selectedStudentUid">
+  <!-- Invite dropdown -->
+  <div *ngIf="allStudents$ | async as students" class="dropdown-container">
+    <select [(ngModel)]="selectedStudentUid">
       <option value="" disabled>Select a student</option>
-      <option
-        *ngFor="let student of students"
-        [value]="student.uid"
-      >
-        {{ student.email }}
-      </option>
+      <option *ngFor="let s of students" [value]="s.uid">{{ s.email }}</option>
     </select>
-    <button (click)="addSelectedStudent()">Add Student</button>
+    <button (click)="addSelectedStudent()">Invite</button>
   </div>
+  <p class="error">{{ updateMessage }}</p>
 
-  <h4>Currently Assigned Students</h4>
-  <!-- Table of *assigned* students only -->
-  <table>
+  <!-- Attendance table -->
+  <table class="attendance-table">
     <thead>
       <tr>
-        <th>Student Email</th>
-        <th>Attendance</th>
-        <th></th> <!-- Remove button column -->
+        <th>Student</th>
+        <th *ngFor="let s of sessions">S{{ s + 1 }}</th>
+        <th>Remove</th>
       </tr>
     </thead>
+
     <tbody>
-      <!-- Filter to only show assigned students -->
-      <tr
-        *ngFor="
-          let assignedUid of course.assignedStudents
-            | slice:0:course.assignedStudents.length
-        "
-      >
-        <!-- Find the actual student object from the allStudents$ array (if needed) -->
-        <ng-container *ngIf="allStudents$ | async as all">
-          <!-- We find the student object matching assignedUid -->
-          <ng-container
-            *ngFor="
-              let student of all
-                | slice:0:all.length
-                | filterUid: assignedUid
-            "
-          >
-            <td>{{ student.email }}</td>
-            <td>
-              <input
-                type="number"
-                [value]="course.attendanceRecords?.[assignedUid] || ''"
-                (input)="updateStudentAttendance(assignedUid, $any($event.target).value)"
-                style="width: 60px;"
-              />
-              %
-            </td>
-            <td>
-              <button (click)="removeStudent(assignedUid)">Remove</button>
-            </td>
-          </ng-container>
-        </ng-container>
+      <tr *ngFor="let uid of course.assignedStudents">
+        <!-- student email -->
+        <td>{{ getStudentEmail(uid) }}</td>
+
+        <!-- 7 check-boxes -->
+        <td *ngFor="let idx of sessions">
+          <input
+            type="checkbox"
+            [checked]="course.attendanceRecords![uid][idx]"
+            (change)="toggleAttendance(uid, idx, $any($event.target).checked)"
+          />
+        </td>
+
+        <!-- remove -->
+        <td>
+          <button (click)="removeStudent(uid)">Remove</button>
+        </td>
       </tr>
     </tbody>
   </table>
 
-  <!-- Save & Back Buttons -->
   <button (click)="saveCourseChanges()">Save Changes</button>
-  <button (click)="goBack()">Back</button>
-  <p *ngIf="updateMessage">{{ updateMessage }}</p>
 </div>

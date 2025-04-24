@@ -1,185 +1,153 @@
 // src/app/professor-course-detail/professor-course-detail.component.ts
-import { Component, OnInit }        from '@angular/core';
-import { ActivatedRoute, Router }   from '@angular/router';
-import { CommonModule }             from '@angular/common';
-import { FormsModule }              from '@angular/forms';
-import { Observable }               from 'rxjs';
-import { Auth }                     from '@angular/fire/auth';
+import { Component, OnInit }          from '@angular/core';
+import { ActivatedRoute, Router }     from '@angular/router';
+import { CommonModule }               from '@angular/common';
+import { FormsModule }                from '@angular/forms';
+import { Observable }                 from 'rxjs';
+import { Auth }                       from '@angular/fire/auth';
 
-import { CourseService, Course }    from '../services/course.service';
-import { UserService, User }        from '../services/user.service';
-import { FilterUidPipe }            from '../pipes/filter-uid.pipe';
-import { LogService, LogEntry }     from '../services/log.service';
+import { CourseService, Course }      from '../services/course.service';
+import { UserService,  User }         from '../services/user.service';
+import { LogService,   LogEntry }     from '../services/log.service';
 
 @Component({
-  selector: 'app-professor-course-detail',
-  standalone: true,
-  imports: [CommonModule, FormsModule, FilterUidPipe],
+  selector   : 'app-professor-course-detail',
+  standalone : true,
+  imports    : [CommonModule, FormsModule],
   templateUrl: './professor-course-detail.component.html',
-  styleUrls: ['./professor-course-detail.component.css']
+  styleUrls  : ['./professor-course-detail.component.css']
 })
 export class ProfessorCourseDetailComponent implements OnInit {
+
+  /* ---------- state ---------- */
   course: Course | null = null;
-  allStudents$!: Observable<User[]>;
-  private allStudentsList: User[] = [];
+
+  allStudents$!: Observable<User[]>;           // async pipe in template
+  private allStudentsList: User[] = [];        // in-memory lookup
 
   selectedStudentUid = '';
-  updateMessage     = '';
+  updateMessage      = '';
+
+  /** indices 0-6 -> “session 1 … 7” */
+  readonly sessions = Array.from({ length: 7 }, (_, i) => i);
 
   constructor(
-    private route       : ActivatedRoute,
-    private router      : Router,
-    private courseSvc   : CourseService,
-    private userSvc     : UserService,
-    private auth        : Auth,
-    private logSvc      : LogService          // ← use LogService
+    private route     : ActivatedRoute,
+    private router    : Router,
+    private courseSvc : CourseService,
+    private userSvc   : UserService,
+    private auth      : Auth,
+    private logSvc    : LogService
   ) {}
 
+  /* ---------- init ---------- */
   ngOnInit(): void {
-    const courseId = this.route.snapshot.paramMap.get('id');
-    if (!courseId) {
-      this.router.navigate(['/professor-dashboard']);
-      return;
-    }
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) { this.router.navigate(['/professor-dashboard']); return; }
 
-    // 1) load the course
-    this.loadCourse(courseId);
+    this.loadCourse(id);
 
-    // 2) load & cache students
+    /* keep a local copy of all students so we can resolve e-mails quickly */
     this.allStudents$ = this.userSvc.getStudents();
-    this.allStudents$.subscribe(list => this.allStudentsList = list);
+    this.allStudents$.subscribe(list => (this.allStudentsList = list));
 
-    // 3) log page view
-    this.writeLog('professor-course-detail', `Viewed course detail ${courseId}`);
+    this.writeLog('professor-course-detail', `Opened detail of course ${id}`);
   }
 
-  private loadCourse(courseId: string) {
-    this.courseSvc.getCourseById(courseId).subscribe({
+  /* ---------- helpers ---------- */
+  /** maps UID → email (falls back to UID) */
+  getStudentEmail(uid: string): string {
+    return this.allStudentsList.find(s => s.uid === uid)?.email ?? uid;
+  }
+
+  private loadCourse(id: string): void {
+    this.courseSvc.getCourseById(id).subscribe({
       next: c => {
-        if (!c) {
-          this.router.navigate(['/professor-dashboard']);
-          return;
-        }
         this.course = {
           ...c,
-          assignedStudents: c.assignedStudents  ?? [],
+          assignedStudents : c.assignedStudents  ?? [],
           attendanceRecords: c.attendanceRecords ?? {}
         };
       },
       error: err => {
-        console.error('Error loading course', err);
-        this.writeLog(
-          'professor-course-detail',
-          `Error loading course ${courseId}: ${err.message || err}`
-        );
+        console.error(err);
+        this.writeLog('professor-course-detail', `Load error: ${err}`);
         this.router.navigate(['/professor-dashboard']);
       }
     });
   }
 
+  /* ---------- student actions ---------- */
   addSelectedStudent(): void {
-    if (!this.course) return;
-    if (!this.selectedStudentUid) {
-      this.updateMessage = 'Please select a student.';
-      return;
+    if (!this.course || !this.selectedStudentUid) {
+      this.updateMessage = 'Please select a student.'; return;
     }
 
     const uid   = this.selectedStudentUid;
-    const user  = this.allStudentsList.find(s => s.uid === uid);
-    const email = user?.email ?? uid;
+    const email = this.getStudentEmail(uid);
 
     if (!this.course.assignedStudents.includes(uid)) {
       this.course.assignedStudents.push(uid);
-      this.course.attendanceRecords![uid] ??= 0;
-
-      this.writeLog(
-        'professor-course-detail',
-        `Invited student ${email} to "${this.course.name}"`
-      );
-      this.updateMessage = 'Student added. Remember to save changes!';
+      this.course.attendanceRecords![uid] = Array(7).fill(false);
+      this.writeLog('professor-course-detail', `Invited ${email}`);
+      this.updateMessage = 'Student added – remember to save.';
     } else {
-      this.updateMessage = 'Student is already assigned.';
+      this.updateMessage = 'Student already assigned.';
     }
-
     this.selectedStudentUid = '';
   }
 
   removeStudent(uid: string): void {
     if (!this.course) return;
-    const user  = this.allStudentsList.find(s => s.uid === uid);
-    const email = user?.email ?? uid;
+    const email = this.getStudentEmail(uid);
 
-    if (this.course.assignedStudents.includes(uid)) {
-      this.course.assignedStudents = this.course.assignedStudents.filter(s => s !== uid);
-      this.writeLog(
-        'professor-course-detail',
-        `Removed student ${email} from "${this.course.name}"`
-      );
-      this.updateMessage = 'Student removed. Don’t forget to save!';
-    }
+    this.course.assignedStudents =
+      this.course.assignedStudents.filter(s => s !== uid);
+    delete this.course.attendanceRecords![uid];
+
+    this.writeLog('professor-course-detail', `Removed ${email}`);
+    this.updateMessage = 'Student removed – remember to save.';
   }
 
-  updateStudentAttendance(uid: string, value: string): void {
+  toggleAttendance(uid: string, idx: number, present: boolean): void {
     if (!this.course) return;
-    const num = Number(value);
-    if (isNaN(num)) return;
+    this.course.attendanceRecords![uid][idx] = present;
 
-    const user  = this.allStudentsList.find(s => s.uid === uid);
-    const email = user?.email ?? uid;
-
-    this.course.attendanceRecords![uid] = num;
+    const email = this.getStudentEmail(uid);
     this.writeLog(
       'professor-course-detail',
-      `Set attendance ${num}% for ${email} in "${this.course.name}"`
+      `Marked ${email} as ${present ? 'present' : 'absent'} for session ${idx + 1}`
     );
   }
 
+  /* ---------- save ---------- */
   saveCourseChanges(): void {
     if (!this.course?.id) return;
-    const updates: Partial<Course> = {
-      name: this.course.name,
-      description: this.course.description,
-      assignedStudents: this.course.assignedStudents,
-      attendanceRecords: this.course.attendanceRecords
-    };
+    const { assignedStudents, attendanceRecords } = this.course;
 
-    this.courseSvc.updateCourse(this.course.id, updates).subscribe({
-      next: () => {
-        this.updateMessage = 'Changes saved successfully!';
-        this.writeLog(
-          'professor-course-detail',
-          `Saved changes to "${this.course!.name}"`
-        );
-      },
-      error: err => {
-        console.error('Update Course Error:', err);
-        this.writeLog(
-          'professor-course-detail',
-          `Error saving changes for ${this.course!.id}: ${err.message || err}`
-        );
-        this.updateMessage = 'Error saving changes.';
-      }
-    });
+    this.courseSvc.updateCourse(this.course.id, { assignedStudents, attendanceRecords })
+      .subscribe({
+        next : () => {
+          this.updateMessage = 'Changes saved!';
+          this.writeLog('professor-course-detail', 'Saved changes');
+        },
+        error: err => {
+          console.error(err);
+          this.updateMessage = 'Save failed';
+        }
+      });
   }
 
-  goBack(): void {
-    this.writeLog(
-      'professor-course-detail',
-      'Navigated back to professor dashboard'
-    );
-    this.router.navigate(['/professor-dashboard']);
-  }
+  /* ---------- navigation ---------- */
+  goBack(): void { this.router.navigate(['/professor-dashboard']); }
 
-  /**
-   * Helper: wrap logSvc.addLog(...) so you don’t repeat boilerplate
-   */
+  /* ---------- logging ---------- */
   private writeLog(page: string, command: string) {
     const entry: Omit<LogEntry, 'id' | 'createdAt'> = {
       page,
       command,
-      userUid: this.auth.currentUser?.uid ?? 'anon',
-      userEmail: this.auth.currentUser?.email ?? undefined
+      userUid: this.auth.currentUser?.uid ?? 'anon'
     };
-    this.logSvc.addLog(entry).subscribe();
+    this.logSvc.addLog(entry).subscribe();      // fire-and-forget
   }
 }

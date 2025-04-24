@@ -1,4 +1,5 @@
 // src/app/services/course.service.ts
+
 import { Injectable } from '@angular/core';
 import {
   Firestore,
@@ -8,31 +9,34 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  serverTimestamp,
   query,
   where,
-  collectionData,
-  serverTimestamp
+  collectionData
 } from '@angular/fire/firestore';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-/** Course document shape stored in Firestore */
+/**
+ * A Course now holds, for each student UID,
+ * an array of 7 booleans (one per session).
+ */
 export interface Course {
-  id?: string;                                 // document ID (added by idField)
+  id?: string;                             // Firestore doc ID
   name: string;
   description: string;
-  assignedStudents: string[];                  // array of student UIDs
-  attendanceRecords?: { [uid: string]: number };
-  professorId?: string;                        // assigned professor UID
-  createdBy: string;                           // UID of the user who created it
-  createdAt: any;                              // Firestore timestamp
+  assignedStudents: string[];              // student UIDs
+  attendanceRecords?: { [uid: string]: boolean[] };
+  professorId?: string;                    // assigned professor UID
+  createdBy: string;                       // who created the course
+  createdAt: any;                          // server timestamp
 }
 
 @Injectable({ providedIn: 'root' })
 export class CourseService {
   constructor(private firestore: Firestore) {}
 
-  /* ───────── Create ───────── */
+  /** Create a new course */
   createCourse(course: Course): Observable<void> {
     const ref = collection(this.firestore, 'courses');
     return from(
@@ -40,8 +44,7 @@ export class CourseService {
     ).pipe(map(() => void 0));
   }
 
-  /* ───────── Read ───────── */
-  /** All courses (admin) */
+  /** Get all courses (for admin) */
   getAllCourses(): Observable<Course[]> {
     return collectionData(
       collection(this.firestore, 'courses'),
@@ -49,7 +52,7 @@ export class CourseService {
     ) as Observable<Course[]>;
   }
 
-  /** Courses created by a professor (legacy use) */
+  /** Get courses this professor created */
   getCourses(professorId: string): Observable<Course[]> {
     const q = query(
       collection(this.firestore, 'courses'),
@@ -58,7 +61,7 @@ export class CourseService {
     return collectionData(q, { idField: 'id' }) as Observable<Course[]>;
   }
 
-  /** Courses assigned to a professor */
+  /** Get courses assigned to a specific professor */
   getCoursesAssignedToProfessor(uid: string): Observable<Course[]> {
     const q = query(
       collection(this.firestore, 'courses'),
@@ -67,7 +70,7 @@ export class CourseService {
     return collectionData(q, { idField: 'id' }) as Observable<Course[]>;
   }
 
-  /** Courses where student UID appears in assignedStudents[] */
+  /** Get courses where the student is in assignedStudents */
   getCoursesForStudent(uid: string): Observable<Course[]> {
     const q = query(
       collection(this.firestore, 'courses'),
@@ -76,7 +79,7 @@ export class CourseService {
     return collectionData(q, { idField: 'id' }) as Observable<Course[]>;
   }
 
-  /** Single course by document ID */
+  /** Fetch a single course by ID */
   getCourseById(id: string): Observable<Course> {
     return from(getDoc(doc(this.firestore, `courses/${id}`))).pipe(
       map(snap => {
@@ -88,12 +91,12 @@ export class CourseService {
     );
   }
 
-  /* ───────── Update ───────── */
+  /** Update an existing course */
   updateCourse(id: string, updates: Partial<Course>): Observable<void> {
     return from(updateDoc(doc(this.firestore, `courses/${id}`), updates));
   }
 
-  /* ───────── Delete ───────── */
+  /** Delete a course */
   deleteCourse(id: string): Observable<void> {
     return from(deleteDoc(doc(this.firestore, `courses/${id}`)));
   }
