@@ -1,98 +1,110 @@
-:root {
-  /* palette (reuse from dashboard) */
-  --bg-light  : #f9f9f9;
-  --bg-white  : #fff;
-  --text-main : #333;
-  --text-sub  : #777;
-  --border    : #e0e0e0;
-  --hover-row : #f7f7f7;
-
-  --radius    : 8px;
-  --shadow    : 0 2px 8px rgba(0,0,0,.12);
-}
-
-/* ───────── container ───────── */
-.edit-container {
-  max-width: 700px;
-  margin: 2rem auto;
-  padding: 1.5rem;
-  background: var(--bg-light);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  color: var(--text-main);
-}
-
-h2, h3, h4 { margin-top: 0; }
-
-.field   { margin-bottom: 1rem; text-align: left; }
-.field label { display:block; font-weight:600; margin-bottom: .25rem; }
-.field input, .field textarea, .field select {
-  width: 100%;
-  padding: .5rem .6rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font: inherit;
-  background: var(--bg-white);
-}
-
-/* ───────── table ───────── */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  table-layout: fixed;
-}
-th, td {
-  padding: .6rem .8rem;
-  border: 1px solid var(--border);
-  word-wrap: break-word;
-}
-thead { background: var(--text-main); color: var(--bg-white); }
-tbody tr:nth-child(even) { background: var(--bg-white); }
-tbody tr:nth-child(odd)  { background: var(--bg-light); }
-tbody tr:hover           { background: var(--hover-row); }
-
-/* numeric attendance box */
-td input[type="number"] {
-  width: 70px;
-  padding: .3rem .4rem;
-  text-align: right;
-}
-
-/* ───────── buttons ───────── */
-button {
-  padding: .55rem 1rem;
-  margin: .4rem .25rem 0 0;
-  border: none;
-  border-radius: var(--radius);
-  font: inherit;
-  cursor: pointer;
-  transition: background .2s;
-}
-button.primary  { background:#000; color:#fff; }
-button.primary:hover { background:#222; }
-
-button.danger   { background:#c0392b; color:#fff; }
-button.danger:hover { background:#e74c3c; }
-
-button.outline {
-  background: transparent;
-  color: var(--text-main);
-  border: 1px solid var(--border);
-}
-button.outline:hover { background: var(--hover-row); }
-
-/* message */
-p.error-msg, p.success-msg {
-  margin-top: .75rem;
-  font-weight:600;
-}
-p.error-msg   { color: #c0392b; }
-p.success-msg { color: #27ae60; }
-
-/* responsive */
-@media(max-width:600px){
-  .edit-container{ margin:1rem; padding:1rem; }
-  th, td{ padding:.5rem; }
-  button{ width:100%; margin:.5rem 0; }
-}
+/* ══════════════════════════════════════════════
+   COURSE-DETAIL / ATTENDANCE  –  STYLES
+   ══════════════════════════════════════════════ */
+   :root {
+    --bg-light : #f9f9f9;
+    --bg-white : #ffffff;
+    --text-main: #333;
+    --text-sub : #777;
+    --border   : #e0e0e0;
+    --hover-row: #f1f1f1;
+    --radius   : 8px;
+    --shadow   : 0 4px 12px rgba(0,0,0,.12);
+  }
+  
+  /* dashboard wrapper (matches other pages) */
+  .dashboard-container{
+    max-width: 860px;
+    margin: 2rem auto;
+    padding: 1.5rem 2rem 2rem;
+    background: var(--bg-light);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    color: var(--text-main);
+    position: relative;
+  }
+  
+  /* back button */
+  .close{
+    position:absolute;
+    top:14px; left:18px;
+    background:none; border:none;
+    font-size:1.2rem;
+    cursor:pointer; color:var(--text-sub);
+    transition:color .2s;
+  }
+  .close:hover{ color:var(--text-main); }
+  
+  /* invite row */
+  .dropdown-container{
+    margin:.5rem 0 1rem;
+    display:flex; gap:.5rem;
+  }
+  .dropdown-container select,
+  .dropdown-container button{
+    padding:.55rem .9rem;
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+    font-size:.95rem;
+  }
+  .dropdown-container button{
+    background:#000; color:#fff; border:none;
+    transition:background .2s;
+  }
+  .dropdown-container button:hover{ background:#222; }
+  
+  /* feedback */
+  .error{ color:#c0392b; margin-top:.25rem; }
+  
+  /* attendance table */
+  .attendance-table{
+    width:100%; border-collapse:collapse; table-layout:fixed;
+  }
+  .attendance-table thead{
+    background:var(--text-main); color:#fff;
+  }
+  .attendance-table th,
+  .attendance-table td{
+    border:1px solid var(--border);
+    padding:.55rem .6rem;
+    text-align:center;
+    word-break:break-word;
+  }
+  .email-col{ width:220px; text-align:left; }      /* wider e-mail column */
+  
+  .attendance-table tbody tr:nth-child(odd){ background:var(--bg-light); }
+  .attendance-table tbody tr:nth-child(even){background:var(--bg-white); }
+  .attendance-table tbody tr:hover{ background:var(--hover-row); }
+  
+  .attendance-table input[type=checkbox]{
+    width:18px; height:18px; cursor:pointer;
+  }
+  
+  /* remove button */
+  .attendance-table button{
+    padding:.35rem .7rem; border:none;
+    border-radius:var(--radius);
+    font-size:.85rem;
+    background:#c0392b; color:#fff;
+    transition:background .2s;
+  }
+  .attendance-table button:hover{ background:#e74c3c; }
+  
+  /* save button */
+  .dashboard-container>button{
+    margin-top:1.25rem;
+    padding:.65rem 1.4rem;
+    border:none; border-radius:var(--radius);
+    background:#000; color:#fff;
+    font-size:1rem; cursor:pointer;
+    transition:background .2s;
+  }
+  .dashboard-container>button:hover{ background:#222; }
+  
+  /* responsive tweaks */
+  @media(max-width:640px){
+    .attendance-table th,
+    .attendance-table td{ padding:.45rem .4rem; }
+    .dropdown-container{ flex-direction:column; }
+  }
+  

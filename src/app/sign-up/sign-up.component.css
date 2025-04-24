@@ -1,57 +1,102 @@
-/* sign-up.component.css */
-
-/* Container styling */
-.w3-container {
-    max-width: 400px;
-    margin: auto;
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* ════════════════════════════════════════
+   0.  GLOBAL TOKENS  ─ (keep in sync)
+   ════════════════════════════════════════ */
+   :root{
+    --bg-light : #f9f9f9;
+    --bg-white : #ffffff;
+  
+    --text-main: #333;
+    --text-sub : #777;
+  
+    --primary  : #000;      /* black buttons */
+    --primary-hover: #222;
+  
+    --border   : #e0e0e0;
+  
+    --radius : 8px;
+    --shadow : 0 4px 16px rgba(0,0,0,.12);
   }
   
-  /* Header styling */
-  .w3-container h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #333333;
+  /* ════════════════════════════════════════
+     1.  OUTER CONTAINER
+     ════════════════════════════════════════ */
+  .w3-container{
+    margin:3.5rem auto;
+    max-width:400px;
+    background:var(--bg-white);
+    border-radius:var(--radius);
+    padding:2rem 2.25rem 2.5rem;
+    box-shadow:var(--shadow);
+    text-align:center;
+    color:var(--text-main);
   }
   
-  /* Label styling */
-  .w3-container label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #555555;
+  h2{
+    margin-top:0;
+    margin-bottom:2rem;
+    font-weight:600;
   }
   
-  /* Input and Select styling */
-  .w3-container input.w3-input,
-  .w3-container select.w3-select {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
+  /* ════════════════════════════════════════
+     2.  INPUTS  (W3-input / W3-select)
+     ════════════════════════════════════════ */
+  .w3-input,
+  .w3-select{
+    width:100%;
+    padding:.65rem .8rem;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    font:inherit;
+    color:var(--text-main);
+    background:var(--bg-light);
+    transition:border-color .15s;
   }
   
-  /* Button styling */
-  .w3-container button.w3-button {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+  .w3-input:focus,
+  .w3-select:focus{
+    outline:none;
+    border-color:var(--primary);
   }
   
-  /* Black button override */
-  .w3-container button.w3-black {
-    background-color: #000000;
-    color: #ffffff;
+  /* give each <p> some space */
+  form p{ margin-bottom:1.25rem; text-align:left; }
+  
+  /* labels */
+  form label{
+    display:block;
+    font-size:.95rem;
+    margin-bottom:.35rem;
+    color:var(--text-sub);
   }
   
-  .w3-container button.w3-black:hover {
-    background-color: #333333;
+  /* ════════════════════════════════════════
+     3.  PRIMARY BUTTON
+     ════════════════════════════════════════ */
+  .w3-button.w3-black{
+    display:block;
+    width:100%;
+    padding:.75rem;
+    font-weight:600;
+    letter-spacing:.3px;
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius);
+    cursor:pointer;
+    transition:background-color .2s;
+  }
+  
+  .w3-button.w3-black:hover{
+    background:var(--primary-hover);
+  }
+  
+  /* ════════════════════════════════════════
+     4.  SMALL SCREENS
+     ════════════════════════════════════════ */
+  @media(max-width:450px){
+    .w3-container{
+      margin:2rem 1rem;
+      padding:1.5rem 1.25rem 2rem;
+    }
   }
   

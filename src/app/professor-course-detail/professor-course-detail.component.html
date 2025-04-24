@@ -1,45 +1,41 @@
 <div *ngIf="course" class="dashboard-container">
+  <!-- back button -->
   <button class="close" (click)="goBack()">← Back</button>
+
   <h2>Edit Course: {{ course.name }}</h2>
   <p>{{ course.description }}</p>
 
+  <!-- invite row -->
   <h3>Assign Students &amp; 7-Session Attendance</h3>
-
-  <!-- Invite dropdown -->
   <div *ngIf="allStudents$ | async as students" class="dropdown-container">
     <select [(ngModel)]="selectedStudentUid">
       <option value="" disabled>Select a student</option>
-      <option *ngFor="let s of students" [value]="s.uid">{{ s.email }}</option>
+      <option *ngFor="let s of students" [value]="s.uid">
+        {{ s.email }}
+      </option>
     </select>
     <button (click)="addSelectedStudent()">Invite</button>
   </div>
   <p class="error">{{ updateMessage }}</p>
 
-  <!-- Attendance table -->
+  <!-- plain fallback table -->
   <table class="attendance-table">
     <thead>
       <tr>
-        <th>Student</th>
+        <th class="email-col">Student&nbsp;E-mail</th>
         <th *ngFor="let s of sessions">S{{ s + 1 }}</th>
         <th>Remove</th>
       </tr>
     </thead>
-
     <tbody>
       <tr *ngFor="let uid of course.assignedStudents">
-        <!-- student email -->
-        <td>{{ getStudentEmail(uid) }}</td>
-
-        <!-- 7 check-boxes -->
+        <td class="email-col">{{ getStudentEmail(uid) }}</td>
         <td *ngFor="let idx of sessions">
           <input
             type="checkbox"
             [checked]="course.attendanceRecords![uid][idx]"
-            (change)="toggleAttendance(uid, idx, $any($event.target).checked)"
-          />
+            (change)="toggleAttendance(uid, idx, $any($event.target).checked)" />
         </td>
-
-        <!-- remove -->
         <td>
           <button (click)="removeStudent(uid)">Remove</button>
         </td>
@@ -47,5 +43,12 @@
     </tbody>
   </table>
 
+  <!-- optional Ag-Grid (renders only if rowData is non-empty) -->
+  <app-attendance-grid
+      *ngIf="rowData.length"
+      [rowData]="rowData">
+  </app-attendance-grid>
+
+  <!-- save -->
   <button (click)="saveCourseChanges()">Save Changes</button>
 </div>

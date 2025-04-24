@@ -1,67 +1,94 @@
-:root {
-  /* colour palette (shared) */
-  --bg-light  : #f9f9f9;
-  --bg-white  : #ffffff;
-  --text-main : #333;
-  --text-sub  : #777;
-  --border    : #e0e0e0;
-  --hover-row : #f1f1f1;
-
-  --radius    : 8px;
-  --shadow    : 0 2px 8px rgba(0,0,0,.12);
-}
-
-/* ───────── container ───────── */
-.dashboard-container{
-  max-width:800px;
-  margin:2rem auto;
-  padding:1.5rem;
-  background:var(--bg-light);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  text-align:center;
-  color:var(--text-main);
-}
-
-h1, h2 { margin-top:0; }
-
-/* ───────── table ───────── */
-.courses-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:1.5rem;
-  table-layout:fixed;
-}
-.courses-table th,
-.courses-table td{
-  padding:.75rem 1rem;
-  border:1px solid var(--border);
-  word-wrap:break-word;
-}
-.courses-table thead{
-  background:var(--text-main);
-  color:var(--bg-white);
-}
-.courses-table tbody tr:nth-child(even){ background:var(--bg-white); }
-.courses-table tbody tr:nth-child(odd) { background:var(--bg-light); }
-.courses-table tbody tr:hover         { background:var(--hover-row); }
-
-/* ───────── buttons ───────── */
-button.w3-button{
-  padding:.55rem 1rem;
-  border:none;
-  border-radius:var(--radius);
-  font-size:1rem;
-  cursor:pointer;
-  transition:background .2s;
-}
-button.w3-red{ background:#c0392b; color:#fff; }
-button.w3-red:hover{ background:#e74c3c; }
-
-/* ───────── responsive ───────── */
-@media(max-width:600px){
-  .dashboard-container{ margin:1rem; padding:1rem; }
+/* ════════════════════════════════
+   GLOBAL TOKENS  – keep in sync
+   ════════════════════════════════ */
+   :root{
+    --bg-light : #f9f9f9;
+    --bg-white : #ffffff;
+  
+    --text-main: #333;
+    --text-sub : #777;
+  
+    --primary  : #000;
+    --primary-hover:#222;
+    --danger   : #c0392b;
+    --danger-hover:#e74c3c;
+  
+    --border   : #e0e0e0;
+    --hover-row:#f1f1f1;
+  
+    --radius:8px;
+    --shadow:0 4px 16px rgba(0,0,0,.1);
+  }
+  
+  /* ════════════════════════════════
+     1. OUTER BOX
+     ════════════════════════════════ */
+  .dashboard-container{
+    max-width:800px;
+    margin:2.5rem auto;
+    padding:1.75rem 2rem 2.25rem;
+    background:var(--bg-light);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    color:var(--text-main);
+  }
+  
+  h1{ margin-top:0; text-align:center; }
+  p { text-align:center; margin-bottom:2rem; }
+  
+  /* ════════════════════════════════
+     2. LOGOUT BUTTON (top-right)
+     ════════════════════════════════ */
+  .w3-button.w3-red{
+    background:var(--danger);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius);
+    padding:.55rem 1.1rem;
+    cursor:pointer;
+    transition:background-color .2s;
+  }
+  .w3-button.w3-red:hover{ background:var(--danger-hover); }
+  
+  /* ════════════════════════════════
+     3. TABLE
+     ════════════════════════════════ */
+  .courses-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:1rem;
+    table-layout:fixed;            /* prevent layout shift */
+  }
   .courses-table th,
-  .courses-table td{ padding:.5rem; }
-  button.w3-button{ width:100%; font-size:.9rem; }
-}
+  .courses-table td{
+    padding:.8rem 1rem;
+    border:1px solid var(--border);
+    text-align:left;
+    word-wrap:break-word;
+  }
+  .courses-table thead{
+    background:var(--text-main);
+    color:var(--bg-white);
+  }
+  .courses-table tbody tr:nth-child(odd){  background:var(--bg-light); }
+  .courses-table tbody tr:nth-child(even){ background:var(--bg-white); }
+  .courses-table tbody tr:hover{
+    background:var(--hover-row);
+    cursor:pointer;
+  }
+  
+  /* ════════════════════════════════
+     4. RESPONSIVE (<600 px)
+     ════════════════════════════════ */
+  @media(max-width:600px){
+    .dashboard-container{
+      margin:1.25rem;
+      padding:1.25rem 1rem 1.75rem;
+    }
+    .courses-table th,
+    .courses-table td{
+      padding:.6rem .7rem;
+      font-size:.95rem;
+    }
+  }
+  

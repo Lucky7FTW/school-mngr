@@ -1,0 +1,46 @@
+/* 1) tweak the Quartz theme to match your palette */
+:root {
+    --sm-primary      : #0056b3;   /* school blue */
+    --sm-light        : #f5f7fa;
+    --sm-border       : #d9dee8;
+    --sm-hover        : #eef2f7;
+    --sm-radius       : 8px;
+  }
+  
+  /* 2) host container */
+  .custom-grid {
+    border-radius: var(--sm-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  /* 3) header */
+  .ag-theme-quartz .ag-header {
+    background: var(--sm-primary);
+    color: #fff;
+    font-weight: 600;
+  }
+  
+  /* 4) zebra-strip rows */
+  .ag-row:nth-child(odd) .ag-cell {
+    background: var(--sm-light);
+  }
+  
+  /* 5) borders */
+  .ag-root-wrapper, .ag-theme-quartz .ag-cell {
+    border-color: var(--sm-border) !important;
+  }
+  
+  /* 6) row hover */
+  .ag-row-hover .ag-cell {
+    background: var(--sm-hover) !important;
+  }
+  
+  /* 7) checkbox cells – center the input */
+  .ag-cell input[type="checkbox"] {
+    cursor: pointer;
+    transform: scale(1.15);
+    margin: 0;
+  }
+  
