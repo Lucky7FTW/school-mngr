@@ -1,16 +1,15 @@
 // src/app/professor-course-detail/professor-course-detail.component.ts
-import { Component, OnInit }   from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule }        from '@angular/common';
-import { FormsModule }         from '@angular/forms';
-import { Observable }          from 'rxjs';
-import { Store }               from '@ngrx/store';
-import { Auth }                from '@angular/fire/auth';
+import { Component, OnInit }           from '@angular/core';
+import { ActivatedRoute, Router }      from '@angular/router';
+import { CommonModule }                from '@angular/common';
+import { FormsModule }                 from '@angular/forms';
+import { Observable }                  from 'rxjs';
+import { Auth }                        from '@angular/fire/auth';
 
-import { CourseService, Course } from '../services/course.service';
-import { UserService,   User   } from '../services/user.service';
-import { FilterUidPipe }        from '../pipes/filter-uid.pipe';
-import { addLogStart }          from '../log/log.actions';   // ← log action
+import { CourseService, Course }       from '../services/course.service';
+import { UserService, User }           from '../services/user.service';
+import { FilterUidPipe }               from '../pipes/filter-uid.pipe';
+import { LoggingService }              from '../services/logging.service';
 
 @Component({
   selector: 'app-professor-course-detail',
@@ -22,91 +21,129 @@ import { addLogStart }          from '../log/log.actions';   // ← log action
 export class ProfessorCourseDetailComponent implements OnInit {
   course: Course | null = null;
   allStudents$!: Observable<User[]>;
+  private allStudentsList: User[] = [];  // ← hold students locally
 
   selectedStudentUid = '';
-  updateMessage = '';
+  updateMessage     = '';
 
   constructor(
-    private route : ActivatedRoute,
-    private router: Router,
-    private courseService: CourseService,
-    private userService  : UserService,
-    private store : Store,                 // ← inject Store
-    private auth  : Auth                   // ← to get current UID
+    private route          : ActivatedRoute,
+    private router         : Router,
+    private courseService  : CourseService,
+    private userService    : UserService,
+    private auth           : Auth,
+    private loggingService : LoggingService
   ) {}
 
-  /* ───────── INITIAL LOAD ───────── */
   ngOnInit(): void {
     const courseId = this.route.snapshot.paramMap.get('id');
-    if (!courseId) { this.router.navigate(['/professor-dashboard']); return; }
+    if (!courseId) {
+      this.router.navigate(['/professor-dashboard']);
+      return;
+    }
+
+    // load course
     this.loadCourse(courseId);
+
+    // load and cache all students
     this.allStudents$ = this.userService.getStudents();
+    this.allStudents$.subscribe(list => this.allStudentsList = list);
+
+    // log page view
+    this.loggingService.log(
+      'professor-course-detail',
+      `Viewed course detail ${courseId}`
+    );
   }
 
   private loadCourse(courseId: string): void {
     this.courseService.getCourseById(courseId).subscribe({
-      next: (course) => {
-        if (!course) { this.router.navigate(['/professor-dashboard']); return; }
+      next: course => {
+        if (!course) {
+          this.router.navigate(['/professor-dashboard']);
+          return;
+        }
         this.course = {
           ...course,
-          assignedStudents : course.assignedStudents ?? [],
+          assignedStudents : course.assignedStudents  ?? [],
           attendanceRecords: course.attendanceRecords ?? {}
         };
       },
       error: err => {
-        console.error(err);
+        console.error('Error loading course', err);
+        this.loggingService.log(
+          'professor-course-detail',
+          `Error loading course ${courseId}: ${err.message || err}`
+        );
         this.router.navigate(['/professor-dashboard']);
       }
     });
   }
 
-  /* ───────── ADD STUDENT ───────── */
   addSelectedStudent(): void {
     if (!this.course) return;
-    if (!this.selectedStudentUid) { this.updateMessage = 'Please select a student.'; return; }
+    if (!this.selectedStudentUid) {
+      this.updateMessage = 'Please select a student.';
+      return;
+    }
 
-    if (!this.course.assignedStudents.includes(this.selectedStudentUid)) {
-      this.course.assignedStudents.push(this.selectedStudentUid);
-      this.course.attendanceRecords![this.selectedStudentUid] ??= 0;
+    const uid = this.selectedStudentUid;
+    const student = this.allStudentsList.find(s => s.uid === uid);
+    const email   = student?.email || uid;
 
-      /* LOG */
-      this.dispatchLog(`Invited student ${this.selectedStudentUid} to course "${this.course.name}"`);
+    if (!this.course.assignedStudents.includes(uid)) {
+      this.course.assignedStudents.push(uid);
+      this.course.attendanceRecords![uid] ??= 0;
+
+      this.loggingService.log(
+        'professor-course-detail',
+        `Invited student ${email} to "${this.course.name}"`
+      );
       this.updateMessage = 'Student added. Remember to save changes!';
     } else {
       this.updateMessage = 'Student is already assigned.';
     }
+
     this.selectedStudentUid = '';
   }
 
-  /* ───────── REMOVE STUDENT ───────── */
   removeStudent(uid: string): void {
     if (!this.course) return;
+    const student = this.allStudentsList.find(s => s.uid === uid);
+    const email   = student?.email || uid;
+
     if (this.course.assignedStudents.includes(uid)) {
       this.course.assignedStudents = this.course.assignedStudents.filter(s => s !== uid);
 
-      /* LOG */
-      this.dispatchLog(`Removed student ${uid} from course "${this.course.name}"`);
+      this.loggingService.log(
+        'professor-course-detail',
+        `Removed student ${email} from "${this.course!.name}"`
+      );
       this.updateMessage = 'Student removed. Don’t forget to save!';
     }
   }
 
-  /* ───────── UPDATE ATTENDANCE ───────── */
   updateStudentAttendance(uid: string, value: string): void {
     if (!this.course) return;
     const num = Number(value);
     if (!isNaN(num)) {
+      const student = this.allStudentsList.find(s => s.uid === uid);
+      const email   = student?.email || uid;
+
       this.course.attendanceRecords![uid] = num;
-      /* optional: log every change */
-      this.dispatchLog(`Set attendance ${num}% for ${uid} in "${this.course.name}"`);
+
+      this.loggingService.log(
+        'professor-course-detail',
+        `Set attendance ${num}% for ${email} in "${this.course!.name}"`
+      );
     }
   }
 
-  /* ───────── SAVE CHANGES ───────── */
   saveCourseChanges(): void {
     if (!this.course?.id) return;
     const updates: Partial<Course> = {
-      name: this.course.name,
-      description: this.course.description,
+      name             : this.course.name,
+      description      : this.course.description,
       assignedStudents : this.course.assignedStudents,
       attendanceRecords: this.course.attendanceRecords
     };
@@ -114,28 +151,27 @@ export class ProfessorCourseDetailComponent implements OnInit {
     this.courseService.updateCourse(this.course.id, updates).subscribe({
       next: () => {
         this.updateMessage = 'Changes saved successfully!';
-
-        /* LOG success save */
-        this.dispatchLog(`Saved changes to course "${this.course!.name}"`);
+        this.loggingService.log(
+          'professor-course-detail',
+          `Saved changes to "${this.course!.name}"`
+        );
       },
       error: err => {
-        console.error(err);
+        console.error('Update Course Error:', err);
+        this.loggingService.log(
+          'professor-course-detail',
+          `Error saving changes for ${this.course!.id}: ${err.message || err}`
+        );
         this.updateMessage = 'Error saving changes.';
       }
     });
   }
 
-  /* ───────── NAVIGATION ───────── */
-  goBack(): void { this.router.navigate(['/professor-dashboard']); }
-
-  /* ───────── HELPER: dispatch a log entry ───────── */
-  private dispatchLog(command: string){
-    this.store.dispatch(addLogStart({
-      entry:{
-        page   : 'professor-course-detail',
-        command,
-        userUid: this.auth.currentUser?.uid ?? 'anon'
-      }
-    }));
+  goBack(): void {
+    this.loggingService.log(
+      'professor-course-detail',
+      'Navigated back to professor dashboard'
+    );
+    this.router.navigate(['/professor-dashboard']);
   }
 }

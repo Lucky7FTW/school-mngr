@@ -1,46 +1,43 @@
 // src/app/sign-up/sign-up.component.ts
-import { Component } from '@angular/core';
+import { Component }    from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { Store } from '@ngrx/store';
+import { FormsModule }  from '@angular/forms';
+import { Store }        from '@ngrx/store';
 
 import { AppState }     from '../store';
 import { signUpStart }  from '../store/auth.actions';
-import { addLogStart }  from '../log/log.actions';   // ← log action
+import { LoggingService } from '../services/logging.service';
 
 @Component({
   selector   : 'app-sign-up',
   standalone : true,
+  imports    : [CommonModule, FormsModule, RouterModule],
   templateUrl: './sign-up.component.html',
   styleUrls  : ['./sign-up.component.css'],
-  imports    : [CommonModule, FormsModule, RouterModule],
 })
 export class SignUpComponent {
-
-  email = '';
+  email    = '';
   password = '';
   role: 'admin' | 'professor' | 'student' = 'student';
 
-  constructor(private store: Store<AppState>) {}
+  constructor(
+    private store          : Store<AppState>,
+    private loggingService : LoggingService   // ← inject logging service
+  ) {}
 
-  /* ─────────  SIGN‑UP  ───────── */
   onSignUp(): void {
-
-    /* 1. fire authentication flow */
+    // 1️⃣ Start the sign-up flow
     this.store.dispatch(signUpStart({
-      email   : this.email,
+      email: this.email,
       password: this.password,
-      role    : this.role
+      role: this.role
     }));
 
-    /* 2. write a log entry */
-    this.store.dispatch(addLogStart({
-      entry:{
-        page   : 'sign-up',
-        command: `Sign‑up attempt as ${this.role} for ${this.email}`,
-        userUid: 'unauth'          // user not created yet
-      }
-    }));
+    // 2️⃣ Log the attempt
+    this.loggingService.log(
+      'sign-up',
+      `Sign-up attempt as ${this.role} for ${this.email}`
+    );
   }
 }
