@@ -1,14 +1,14 @@
 // src/app/admin-dashboard/admin-dashboard.component.ts
-import { Component, OnInit }   from '@angular/core';
-import { CommonModule }         from '@angular/common';
-import { FormsModule }          from '@angular/forms';
-import { Router }               from '@angular/router';
-import { Auth }                 from '@angular/fire/auth';
-import { Observable }           from 'rxjs';
+import { Component, OnInit }        from '@angular/core';
+import { CommonModule }              from '@angular/common';
+import { FormsModule }               from '@angular/forms';
+import { Router }                    from '@angular/router';
+import { Auth }                      from '@angular/fire/auth';
+import { Observable }                from 'rxjs';
 
-import { CourseService, Course } from '../services/course.service';
-import { UserService, User }     from '../services/user.service';
-import { LoggingService }        from '../services/logging.service';
+import { CourseService, Course }     from '../services/course.service';
+import { UserService, User }         from '../services/user.service';
+import { LogService, LogEntry }      from '../services/log.service';
 
 @Component({
   selector   : 'app-admin-dashboard',
@@ -18,13 +18,14 @@ import { LoggingService }        from '../services/logging.service';
   styleUrls  : ['./admin-dashboard.component.css']
 })
 export class AdminDashboardComponent implements OnInit {
-  /* ─── create/edit modal state ─── */
+  // ───────── Create-Course modal state ─────────
   isCreateCourseModalOpen = false;
-  courseName       = '';
-  courseDescription= '';
-  selectedProfessorUid = '';
-  createCourseMessage  = '';
+  courseName             = '';
+  courseDescription      = '';
+  selectedProfessorUid   = '';
+  createCourseMessage    = '';
 
+  // ───────── Edit-Course modal state ─────────
   isEditCourseModalOpen   = false;
   editCourseId            = '';
   editCourseName          = '';
@@ -32,24 +33,26 @@ export class AdminDashboardComponent implements OnInit {
   editProfessorUid        = '';
   editCourseMessage       = '';
 
-  /* ─── delete confirm state ─── */
+  // ───────── Delete-Confirm modal state ─────────
   courseToDeleteId   : string | null = null;
-  courseToDeleteName : string       = '';
+  courseToDeleteName = '';
 
-  /* ─── data streams ─── */
+  // ───────── Data streams ─────────
   professors$!: Observable<User[]>;
   courses$!   : Observable<Course[]>;
+  // map professor UID → email
   professorEmailMap: Record<string,string> = {};
 
   constructor(
-    private auth           : Auth,
-    private router         : Router,
-    private courseSvc      : CourseService,
-    private userSvc        : UserService,
-    private loggingService : LoggingService
+    private auth      : Auth,
+    private router    : Router,
+    private courseSvc : CourseService,
+    private userSvc   : UserService,
+    private logSvc    : LogService
   ) {}
 
   ngOnInit(): void {
+    // load professors & build map
     this.professors$ = this.userSvc.getProfessors();
     this.professors$.subscribe(list =>
       list.forEach(p => this.professorEmailMap[p.uid] = p.email)
@@ -61,36 +64,52 @@ export class AdminDashboardComponent implements OnInit {
     this.courses$ = this.courseSvc.getAllCourses();
   }
 
-  /* ───── Logout ───── */
+  /** Helper: write a log entry including userUid + userEmail */
+  private log(page: string, command: string) {
+    const user = this.auth.currentUser;
+    const entry: Omit<LogEntry, 'id' | 'createdAt'> = {
+      page,
+      command,
+      userUid:   user?.uid   ?? 'anon',
+      userEmail: user?.email ?? 'unknown'
+    };
+    this.logSvc.addLog(entry)
+      .subscribe({ error: err => console.error('Log error:', err) });
+  }
+
+  // ───────── Logout ─────────
   onLogout() {
-    this.auth.signOut().then(()=>{
-      this.loggingService.log('admin-dashboard','Logged out');
+    this.auth.signOut().then(() => {
+      this.log('admin-dashboard', 'Logged out');
       this.router.navigate(['/login']);
     });
   }
 
-  /* ───── Create ───── */
-  openCreateCourseModal()  { this.isCreateCourseModalOpen = true;  }
+  // ───────── Create Course ─────────
+  openCreateCourseModal()  { this.isCreateCourseModalOpen = true; }
   closeCreateCourseModal() { this.isCreateCourseModalOpen = false; }
 
   createCourse() {
-    if (!this.courseName.trim() || !this.courseDescription.trim() || !this.selectedProfessorUid) {
-      this.createCourseMessage = 'Please fill out all fields.'; return;
+    if (!this.courseName.trim()
+     || !this.courseDescription.trim()
+     || !this.selectedProfessorUid) {
+      this.createCourseMessage = 'Please fill out all fields.';
+      return;
     }
     const payload: Course = {
-      name              : this.courseName,
-      description       : this.courseDescription,
-      assignedStudents  : [],
-      attendanceRecords : {},
-      professorId       : this.selectedProfessorUid,
-      createdBy         : 'admin',
-      createdAt         : null
+      name             : this.courseName,
+      description      : this.courseDescription,
+      assignedStudents : [],
+      attendanceRecords: {},
+      professorId      : this.selectedProfessorUid,
+      createdBy        : this.auth.currentUser?.uid ?? 'admin',
+      createdAt        : null
     };
     this.courseSvc.createCourse(payload).subscribe({
       next: () => {
-        this.loggingService.log(
+        this.log(
           'admin-dashboard',
-          `Created course "${payload.name}" for professor ${payload.professorId}`
+          `Created course "${payload.name}" for professor ${this.professorEmailMap[payload.professorId!]!}`
         );
         this.closeCreateCourseModal();
         this.courseName = this.courseDescription = this.selectedProfessorUid = '';
@@ -103,7 +122,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  /* ───── Edit ───── */
+  // ───────── Edit Course ─────────
   openEditCourseModal(c: Course) {
     this.isEditCourseModalOpen   = true;
     this.editCourseId            = c.id!;
@@ -111,17 +130,21 @@ export class AdminDashboardComponent implements OnInit {
     this.editCourseDescription   = c.description;
     this.editProfessorUid        = c.professorId ?? '';
     this.editCourseMessage       = '';
-
-    this.loggingService.log(
+    this.log(
       'admin-dashboard',
-      `Opened edit modal for "${c.name}" (${c.id})`
+      `Opened edit for "${c.name}" (${c.id})`
     );
   }
-  closeEditCourseModal() { this.isEditCourseModalOpen = false; }
+  closeEditCourseModal() {
+    this.isEditCourseModalOpen = false;
+  }
 
   saveEditedCourse() {
-    if (!this.editCourseName.trim() || !this.editCourseDescription.trim() || !this.editProfessorUid) {
-      this.editCourseMessage = 'Please fill out all fields.'; return;
+    if (!this.editCourseName.trim()
+     || !this.editCourseDescription.trim()
+     || !this.editProfessorUid) {
+      this.editCourseMessage = 'Please fill out all fields.';
+      return;
     }
     const updates: Partial<Course> = {
       name       : this.editCourseName,
@@ -130,7 +153,7 @@ export class AdminDashboardComponent implements OnInit {
     };
     this.courseSvc.updateCourse(this.editCourseId, updates).subscribe({
       next: () => {
-        this.loggingService.log(
+        this.log(
           'admin-dashboard',
           `Saved edits for "${this.editCourseName}" (${this.editCourseId})`
         );
@@ -144,21 +167,21 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  /* ───── Delete ───── */
-  // Now accept the entire Course, so we can capture its name.
-  promptDelete(c: Course) {
-    this.courseToDeleteId   = c.id!;
-    this.courseToDeleteName = c.name;
+  // ───────── Delete Course ─────────
+  promptDelete(course: Course) {
+    this.courseToDeleteId   = course.id!;
+    this.courseToDeleteName = course.name;
   }
   cancelDelete() {
     this.courseToDeleteId   = null;
     this.courseToDeleteName = '';
   }
+
   confirmDelete() {
     if (!this.courseToDeleteId) return;
     this.courseSvc.deleteCourse(this.courseToDeleteId).subscribe({
       next: () => {
-        this.loggingService.log(
+        this.log(
           'admin-dashboard',
           `Deleted course "${this.courseToDeleteName}"`
         );

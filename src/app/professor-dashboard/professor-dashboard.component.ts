@@ -8,7 +8,7 @@ import { Observable }              from 'rxjs';
 
 import { CourseService, Course }   from '../services/course.service';
 import { UserService }             from '../services/user.service';
-import { LoggingService }          from '../services/logging.service';
+import { LogService }              from '../services/log.service';
 
 @Component({
   selector: 'app-professor-dashboard',
@@ -21,54 +21,65 @@ export class ProfessorDashboardComponent implements OnInit {
   courses$!: Observable<Course[]>;
 
   constructor(
-    private auth           : Auth,
-    private router         : Router,
-    private courseService  : CourseService,
-    private userService    : UserService,
-    private loggingService : LoggingService   // ← inject here
+    private auth          : Auth,
+    private router        : Router,
+    private courseService : CourseService,
+    private userService   : UserService,
+    private logService    : LogService
   ) {}
 
   ngOnInit(): void {
     authState(this.auth).subscribe(user => {
-      if (user) {
-        const professorUid = user.uid;
-
-        // Load only the courses assigned to this professor
-        this.courses$ = this.courseService.getCoursesAssignedToProfessor(professorUid);
-
-        // Log that the dashboard was viewed
-        this.loggingService.log(
-          'professor-dashboard',
-          `Professor ${professorUid} viewed dashboard`
-        );
-      } else {
+      if (!user) {
         console.error('No authenticated professor found.');
-        this.router.navigate(['/login']);
+        return void this.router.navigate(['/login']);
       }
+
+      const uid   = user.uid;
+      const email = user.email ?? '';
+
+      // 1) load only courses assigned to this professor
+      this.courses$ = this.courseService.getCoursesAssignedToProfessor(uid);
+
+      // 2) log page view
+      this.logService.addLog({
+        page     : 'professor-dashboard',
+        command  : `Viewed dashboard`,
+        userUid  : uid,
+      }).subscribe();
     });
   }
 
   onCourseClick(course: Course): void {
-    if (course.id) {
-      // Log the navigation intent
-      this.loggingService.log(
-        'professor-dashboard',
-        `Clicked course "${course.name}" (${course.id})`
-      );
+    if (!course.id) return;
 
-      // Navigate to the detail page
-      this.router.navigate(['/professor/course', course.id]);
-    }
+    const uid   = this.auth.currentUser?.uid ?? 'anon';
+    const email = this.auth.currentUser?.email ?? '';
+
+    // record the click
+    this.logService.addLog({
+      page     : 'professor-dashboard',
+      command  : `Clicked course "${course.name}" (${course.id})`,
+      userUid  : uid,
+    }).subscribe();
+
+    // navigate
+    this.router.navigate(['/professor/course', course.id]);
   }
 
   onLogout(): void {
+    const uid   = this.auth.currentUser?.uid ?? 'anon';
+    const email = this.auth.currentUser?.email ?? '';
+
+    // sign out then log
     this.auth.signOut()
       .then(() => {
-        // Log the logout
-        this.loggingService.log(
-          'professor-dashboard',
-          'Professor logged out'
-        );
+        this.logService.addLog({
+          page     : 'professor-dashboard',
+          command  : 'Logged out',
+          userUid  : uid,
+        }).subscribe();
+
         this.router.navigate(['/login']);
       })
       .catch(err => console.error('Logout Error:', err));

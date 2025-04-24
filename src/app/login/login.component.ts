@@ -13,7 +13,8 @@ import {
   selectAuthError
 } from '../store/auth.selectors';
 
-import { LoggingService }          from '../services/logging.service';
+import { LogService, LogEntry }    from '../services/log.service';
+import { Auth }                    from '@angular/fire/auth';
 
 @Component({
   selector   : 'app-login',
@@ -32,19 +33,23 @@ export class LoginComponent implements OnInit, OnDestroy {
   private errSub!: Subscription;
 
   constructor(
-    private store          : Store<AppState>,
-    private router         : Router,
-    private loggingService : LoggingService   // ← inject it
+    private store   : Store<AppState>,
+    private router  : Router,
+    private auth    : Auth,
+    private logSvc  : LogService
   ) {}
 
   ngOnInit(): void {
-    // Log any login failures
+    // Log login failures
     this.errSub = this.error$.subscribe(err => {
       if (err) {
-        this.loggingService.log(
-          'login',
-          `Login FAILED for ${this.email} (${err.message || err})`
-        );
+        const entry: Omit<LogEntry, 'id' | 'createdAt'> = {
+          page:    'login',
+          command: `Login FAILED for ${this.email}: ${err.message || err}`,
+          userUid: 'unauth',
+          userEmail: this.email
+        };
+        this.logSvc.addLog(entry).subscribe();
       }
     });
   }
@@ -54,15 +59,19 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   onLogin(): void {
-    // Start the auth flow
-    this.store.dispatch(
-      loginStart({ email: this.email, password: this.password })
-    );
+    // Dispatch authentication
+    this.store.dispatch(loginStart({
+      email: this.email,
+      password: this.password
+    }));
 
-    // Log the attempt
-    this.loggingService.log(
-      'login',
-      `Login attempt for ${this.email}`
-    );
+    // Immediately log the attempt
+    const entry: Omit<LogEntry, 'id' | 'createdAt'> = {
+      page:    'login',
+      command: `Login attempt for ${this.email}`,
+      userUid: 'unauth',
+      userEmail: this.email
+    };
+    this.logSvc.addLog(entry).subscribe();
   }
 }

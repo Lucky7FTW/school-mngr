@@ -7,7 +7,7 @@ import { Store }        from '@ngrx/store';
 
 import { AppState }     from '../store';
 import { signUpStart }  from '../store/auth.actions';
-import { LoggingService } from '../services/logging.service';
+import { LogService }   from '../services/log.service';
 
 @Component({
   selector   : 'app-sign-up',
@@ -22,22 +22,23 @@ export class SignUpComponent {
   role: 'admin' | 'professor' | 'student' = 'student';
 
   constructor(
-    private store          : Store<AppState>,
-    private loggingService : LoggingService   // ← inject logging service
+    private store      : Store<AppState>,
+    private logService : LogService
   ) {}
 
   onSignUp(): void {
-    // 1️⃣ Start the sign-up flow
+    // 1️⃣ Kick off the sign-up flow
     this.store.dispatch(signUpStart({
       email: this.email,
       password: this.password,
       role: this.role
     }));
 
-    // 2️⃣ Log the attempt
-    this.loggingService.log(
-      'sign-up',
-      `Sign-up attempt as ${this.role} for ${this.email}`
-    );
+    // 2️⃣ Immediately log the attempt (LogService will fill in userEmail for you)
+    this.logService.addLog({
+      page   : 'sign-up',
+      command: `Sign-up attempt as ${this.role} for ${this.email}`,
+      userUid: 'unauth'
+    }).subscribe();
   }
 }

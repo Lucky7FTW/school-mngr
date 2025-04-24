@@ -1,15 +1,15 @@
 // src/app/professor-course-detail/professor-course-detail.component.ts
-import { Component, OnInit }           from '@angular/core';
-import { ActivatedRoute, Router }      from '@angular/router';
-import { CommonModule }                from '@angular/common';
-import { FormsModule }                 from '@angular/forms';
-import { Observable }                  from 'rxjs';
-import { Auth }                        from '@angular/fire/auth';
+import { Component, OnInit }        from '@angular/core';
+import { ActivatedRoute, Router }   from '@angular/router';
+import { CommonModule }             from '@angular/common';
+import { FormsModule }              from '@angular/forms';
+import { Observable }               from 'rxjs';
+import { Auth }                     from '@angular/fire/auth';
 
-import { CourseService, Course }       from '../services/course.service';
-import { UserService, User }           from '../services/user.service';
-import { FilterUidPipe }               from '../pipes/filter-uid.pipe';
-import { LoggingService }              from '../services/logging.service';
+import { CourseService, Course }    from '../services/course.service';
+import { UserService, User }        from '../services/user.service';
+import { FilterUidPipe }            from '../pipes/filter-uid.pipe';
+import { LogService, LogEntry }     from '../services/log.service';
 
 @Component({
   selector: 'app-professor-course-detail',
@@ -21,18 +21,18 @@ import { LoggingService }              from '../services/logging.service';
 export class ProfessorCourseDetailComponent implements OnInit {
   course: Course | null = null;
   allStudents$!: Observable<User[]>;
-  private allStudentsList: User[] = [];  // ← hold students locally
+  private allStudentsList: User[] = [];
 
   selectedStudentUid = '';
   updateMessage     = '';
 
   constructor(
-    private route          : ActivatedRoute,
-    private router         : Router,
-    private courseService  : CourseService,
-    private userService    : UserService,
-    private auth           : Auth,
-    private loggingService : LoggingService
+    private route       : ActivatedRoute,
+    private router      : Router,
+    private courseSvc   : CourseService,
+    private userSvc     : UserService,
+    private auth        : Auth,
+    private logSvc      : LogService          // ← use LogService
   ) {}
 
   ngOnInit(): void {
@@ -42,36 +42,33 @@ export class ProfessorCourseDetailComponent implements OnInit {
       return;
     }
 
-    // load course
+    // 1) load the course
     this.loadCourse(courseId);
 
-    // load and cache all students
-    this.allStudents$ = this.userService.getStudents();
+    // 2) load & cache students
+    this.allStudents$ = this.userSvc.getStudents();
     this.allStudents$.subscribe(list => this.allStudentsList = list);
 
-    // log page view
-    this.loggingService.log(
-      'professor-course-detail',
-      `Viewed course detail ${courseId}`
-    );
+    // 3) log page view
+    this.writeLog('professor-course-detail', `Viewed course detail ${courseId}`);
   }
 
-  private loadCourse(courseId: string): void {
-    this.courseService.getCourseById(courseId).subscribe({
-      next: course => {
-        if (!course) {
+  private loadCourse(courseId: string) {
+    this.courseSvc.getCourseById(courseId).subscribe({
+      next: c => {
+        if (!c) {
           this.router.navigate(['/professor-dashboard']);
           return;
         }
         this.course = {
-          ...course,
-          assignedStudents : course.assignedStudents  ?? [],
-          attendanceRecords: course.attendanceRecords ?? {}
+          ...c,
+          assignedStudents: c.assignedStudents  ?? [],
+          attendanceRecords: c.attendanceRecords ?? {}
         };
       },
       error: err => {
         console.error('Error loading course', err);
-        this.loggingService.log(
+        this.writeLog(
           'professor-course-detail',
           `Error loading course ${courseId}: ${err.message || err}`
         );
@@ -87,15 +84,15 @@ export class ProfessorCourseDetailComponent implements OnInit {
       return;
     }
 
-    const uid = this.selectedStudentUid;
-    const student = this.allStudentsList.find(s => s.uid === uid);
-    const email   = student?.email || uid;
+    const uid   = this.selectedStudentUid;
+    const user  = this.allStudentsList.find(s => s.uid === uid);
+    const email = user?.email ?? uid;
 
     if (!this.course.assignedStudents.includes(uid)) {
       this.course.assignedStudents.push(uid);
       this.course.attendanceRecords![uid] ??= 0;
 
-      this.loggingService.log(
+      this.writeLog(
         'professor-course-detail',
         `Invited student ${email} to "${this.course.name}"`
       );
@@ -109,15 +106,14 @@ export class ProfessorCourseDetailComponent implements OnInit {
 
   removeStudent(uid: string): void {
     if (!this.course) return;
-    const student = this.allStudentsList.find(s => s.uid === uid);
-    const email   = student?.email || uid;
+    const user  = this.allStudentsList.find(s => s.uid === uid);
+    const email = user?.email ?? uid;
 
     if (this.course.assignedStudents.includes(uid)) {
       this.course.assignedStudents = this.course.assignedStudents.filter(s => s !== uid);
-
-      this.loggingService.log(
+      this.writeLog(
         'professor-course-detail',
-        `Removed student ${email} from "${this.course!.name}"`
+        `Removed student ${email} from "${this.course.name}"`
       );
       this.updateMessage = 'Student removed. Don’t forget to save!';
     }
@@ -126,39 +122,38 @@ export class ProfessorCourseDetailComponent implements OnInit {
   updateStudentAttendance(uid: string, value: string): void {
     if (!this.course) return;
     const num = Number(value);
-    if (!isNaN(num)) {
-      const student = this.allStudentsList.find(s => s.uid === uid);
-      const email   = student?.email || uid;
+    if (isNaN(num)) return;
 
-      this.course.attendanceRecords![uid] = num;
+    const user  = this.allStudentsList.find(s => s.uid === uid);
+    const email = user?.email ?? uid;
 
-      this.loggingService.log(
-        'professor-course-detail',
-        `Set attendance ${num}% for ${email} in "${this.course!.name}"`
-      );
-    }
+    this.course.attendanceRecords![uid] = num;
+    this.writeLog(
+      'professor-course-detail',
+      `Set attendance ${num}% for ${email} in "${this.course.name}"`
+    );
   }
 
   saveCourseChanges(): void {
     if (!this.course?.id) return;
     const updates: Partial<Course> = {
-      name             : this.course.name,
-      description      : this.course.description,
-      assignedStudents : this.course.assignedStudents,
+      name: this.course.name,
+      description: this.course.description,
+      assignedStudents: this.course.assignedStudents,
       attendanceRecords: this.course.attendanceRecords
     };
 
-    this.courseService.updateCourse(this.course.id, updates).subscribe({
+    this.courseSvc.updateCourse(this.course.id, updates).subscribe({
       next: () => {
         this.updateMessage = 'Changes saved successfully!';
-        this.loggingService.log(
+        this.writeLog(
           'professor-course-detail',
           `Saved changes to "${this.course!.name}"`
         );
       },
       error: err => {
         console.error('Update Course Error:', err);
-        this.loggingService.log(
+        this.writeLog(
           'professor-course-detail',
           `Error saving changes for ${this.course!.id}: ${err.message || err}`
         );
@@ -168,10 +163,23 @@ export class ProfessorCourseDetailComponent implements OnInit {
   }
 
   goBack(): void {
-    this.loggingService.log(
+    this.writeLog(
       'professor-course-detail',
       'Navigated back to professor dashboard'
     );
     this.router.navigate(['/professor-dashboard']);
+  }
+
+  /**
+   * Helper: wrap logSvc.addLog(...) so you don’t repeat boilerplate
+   */
+  private writeLog(page: string, command: string) {
+    const entry: Omit<LogEntry, 'id' | 'createdAt'> = {
+      page,
+      command,
+      userUid: this.auth.currentUser?.uid ?? 'anon',
+      userEmail: this.auth.currentUser?.email ?? undefined
+    };
+    this.logSvc.addLog(entry).subscribe();
   }
 }

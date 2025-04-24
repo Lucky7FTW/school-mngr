@@ -1,8 +1,9 @@
 // src/app/services/log.service.ts
 //-------------------------------------------------------------
-// A tiny wrapper around Firestore for writing / streaming logs
+// A tiny wrapper around Firestore for writing/streaming logs
 //-------------------------------------------------------------
 import { Injectable } from '@angular/core';
+import { Auth } from '@angular/fire/auth';
 import {
   Firestore,
   collection,
@@ -15,44 +16,52 @@ import {
 } from '@angular/fire/firestore';
 import { from, Observable } from 'rxjs';
 
-/** Shape of a single log entry stored in `/logs/{logId}` */
 export interface LogEntry {
-  id?: string;      // <-- document ID (injected by { idField:'id' })
-  page: string;     // e.g. "admin-dashboard", "professor-course-detail"
-  command: string;  // short description: "Create course X", "Delete course Y"
-  userUid: string;  // UID of the user who triggered the action
-  createdAt: any;   // Firestore timestamp (serverTimestamp)
+  id?: string;         // document ID (mapped by collectionData)
+  page: string;        // e.g. "admin-dashboard"
+  command: string;     // e.g. "Created course X"
+  userUid: string;     // UID of the actor
+  userEmail?: string;  // injected from Auth.currentUser.email
+  createdAt: any;      // Firestore server timestamp
 }
 
 @Injectable({ providedIn: 'root' })
 export class LogService {
-  constructor(private fs: Firestore) {}
+  constructor(
+    private fs: Firestore,
+    private auth: Auth
+  ) {}
 
-  //---------------------------------------------------------------------------
-  // addLog  ➜  write one log entry (fire‑and‑forget)
-  //---------------------------------------------------------------------------
-  addLog(entry: Omit<LogEntry, 'id' | 'createdAt'>) {
+  /**
+   * Writes a log entry. Automatically adds `userEmail` and `createdAt`.
+   * 
+   * @param entry Omit<LogEntry, 'id' | 'createdAt' | 'userEmail'>
+   */
+  addLog(entry: Omit<LogEntry, 'id' | 'createdAt' | 'userEmail'>) {
+    const user = this.auth.currentUser;
+    const userEmail = user?.email ?? 'unknown';
+
     return from(
       addDoc(collection(this.fs, 'logs'), {
         ...entry,
+        userEmail,
         createdAt: serverTimestamp()
       })
     );
   }
 
+  /**
+   * Streams logs for a given page, optionally filtered by userUid.
+   */
   getLogs(page: string, userUid?: string): Observable<LogEntry[]> {
     let q = query(
       collection(this.fs, 'logs'),
       where('page', '==', page),
       orderBy('createdAt', 'desc')
     );
-
-    // If a specific user's history is desired, add a second filter:
     if (userUid) {
       q = query(q, where('userUid', '==', userUid));
     }
-
-    // `idField:'id'` maps Firestore doc.id onto the `id` property
     return collectionData(q, { idField: 'id' }) as Observable<LogEntry[]>;
   }
 }
